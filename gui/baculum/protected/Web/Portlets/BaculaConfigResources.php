@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -124,7 +124,7 @@ class BaculaConfigResources extends ResourceListTemplate {
 		);
 		if (count($deps) === 0) {
 			// NO DEPENDENCY. Ready to remove.
-			$this->removeResourceFromConfig(
+			self::removeResourceFromConfig(
 				$config,
 				$host_params['resource_type'],
 				$host_params['resource_name']
@@ -145,11 +145,12 @@ class BaculaConfigResources extends ResourceListTemplate {
 			}
 		} else {
 			// DEPENDENCIES EXIST. List them on the interface.
-			$this->showDependenciesError(
+			$error_message = self::prepareDependenciesError(
 				$deps,
 				$host_params['resource_type'],
 				$host_params['resource_name']
 			);
+			$this->showRemovedResourceError($error_message);
 		}
 	}
 
@@ -186,13 +187,14 @@ class BaculaConfigResources extends ResourceListTemplate {
 
 	/**
 	 * Show dependencies error message.
+	 * NOTE: Method called also externally (@see BaculaConfigResourceList)
 	 *
 	 * @param array $deps list dependencies for the removing resource
 	 * @param string $resource_type resource type of the removing resource
 	 * @param string $resource_name resource name of the removing resource
-	 * @return none
+	 * @return string error message
 	 */
-	private function showDependenciesError($deps, $resource_type, $resource_name) {
+	public static function prepareDependenciesError($deps, $resource_type, $resource_name) {
 		$emsg = Prado::localize('Resource %s "%s" is used in the following resources:');
 		$emsg = sprintf($emsg, $resource_type, $resource_name);
 		$emsg_deps = Prado::localize('Component: %s, Resource: %s "%s", Directive: %s');
@@ -209,20 +211,20 @@ class BaculaConfigResources extends ResourceListTemplate {
 		$emsg_sum = Prado::localize('Please unassign resource %s "%s" from these resources and try again.');
 		$emsg_sum = sprintf($emsg_sum, $resource_type, $resource_name);
 		$error = array($emsg, implode('<br />', $dependencies),  $emsg_sum);
-		$error_message = implode('<br /><br />', $error);
-		$this->showRemovedResourceError($error_message);
+		return implode('<br /><br />', $error);
 	}
 
 	/**
 	 * Remove resource from config.
 	 * Note, passing config by reference.
+	 * NOTE: Method called also externally (@see BaculaConfigResourceList)
 	 *
 	 * @param array $config entire config
 	 * @param string $resource_type resource type to remove
 	 * @param string $resource_name resource name to remove
 	 * @return none
 	 */
-	public function removeResourceFromConfig(&$config, $resource_type, $resource_name) {
+	public static function removeResourceFromConfig(&$config, $resource_type, $resource_name) {
 		for ($i = 0; $i < count($config); $i++) {
 			foreach ($config[$i] as $rtype => $resource) {
 				if (!property_exists($resource, 'Name')) {

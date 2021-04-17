@@ -61,7 +61,7 @@ class NewResource extends BaculumWebPage {
 			$this->setComponentName($component_name);
 			$this->setResourceType($resource_type);
 			// Non-admin can configure only host assigned to him
-			$this->NewResource->setHost($this->User->getAPIHosts());
+			$this->NewResource->setHost($this->User->getDefaultAPIHost());
 			$this->NewResource->setComponentType($component_type);
 			$this->NewResource->setComponentName($component_name);
 			$this->NewResource->setResourceType($resource_type);
@@ -77,8 +77,9 @@ class NewResource extends BaculumWebPage {
 	public function setHosts() {
 		$config = $this->getModule('host_config')->getConfig();
 		$hosts = array('' => Prado::localize('Please select host'));
+		$user_api_hosts = $this->User->getAPIHosts();
 		foreach ($config as $host => $vals) {
-			if ($host !== $this->User->getAPIHosts()) {
+			if (!in_array($host, $user_api_hosts)) {
 				continue;
 			}
 			$item = "Host: $host, Address: {$vals['address']}, Port: {$vals['port']}";

@@ -20,6 +20,7 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
+Prado::using('System.Web.UI.ActiveControls.TActiveDropDownList');
 Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.ActiveControls.TActiveLinkButton');
 Prado::using('System.Web.UI.ActiveControls.TCallback');
@@ -38,6 +39,7 @@ class ClientView extends BaculumWebPage {
 
 	const CLIENTID = 'ClientId';
 	const CLIENT_NAME = 'ClientName';
+	const CLIENT_ADDRESS = 'ClientAddress';
 
 	public function onInit($param) {
 		parent::onInit($param);
@@ -60,31 +62,127 @@ class ClientView extends BaculumWebPage {
 		}
 		$this->setClientId($clientid);
 		$clientshow = $this->getModule('api')->get(
-			array('clients', $clientid, 'show'),
+			['clients', $clientid, 'show', '?output=json'],
 			null,
 			true
 		);
 		if ($clientshow->error === 0) {
-			$this->ShowLog->Text = implode(PHP_EOL, $clientshow->output);
+			if (property_exists($clientshow->output, 'enabled')) {
+				$this->OEnabled->Text = $clientshow->output->enabled == 1 ? Prado::localize('Yes') : Prado::localize('No');
+			}
+			if (property_exists($clientshow->output, 'address')) {
+				$this->setClientAddress($clientshow->output->address);
+				$this->OFDAddress->Text = $clientshow->output->address;
+			}
+			if (property_exists($clientshow->output, 'fdport')) {
+				$this->OFDPort->Text = $clientshow->output->fdport;
+			}
+			if (property_exists($clientshow->output, 'maxjobs') && property_exists($clientshow->output, 'numjobs')) {
+				$this->ORunningJobs->Text = $clientshow->output->numjobs . '/' . $clientshow->output->maxjobs;
+			}
+			if (property_exists($clientshow->output, 'autoprune')) {
+				$this->OAutoPrune->Text = $clientshow->output->autoprune = 1 ? Prado::localize('Yes') : Prado::localize('No');
+			}
+			if (property_exists($clientshow->output, 'jobretention')) {
+				$this->OJobRetention->Text = $clientshow->output->jobretention;
+			}
+			if (property_exists($clientshow->output, 'fileretention')) {
+				$this->OFileRetention->Text = $clientshow->output->fileretention;
+			}
 		}
-		$client = $this->getModule('api')->get(
-			array('clients', $clientid)
-		);
-		if ($client->error === 0) {
-			$this->setClientName($client->output->name);
+		if (property_exists($clientshow->output, 'name')) {
+			// set name from client show
+			$this->setClientName($clientshow->output->name);
+		} else {
+			// set name from catalog data request
+			$client = $this->getModule('api')->get(
+				array('clients', $clientid)
+			);
+			if ($client->error === 0) {
+				$this->setClientName($client->output->name);
+			}
+		}
+		$this->setAPIHosts();
+	}
+
+	public function setDIRClientConfig($sender, $param) {
+		$this->FDFileDaemonConfig->unloadDirectives();
+		if (!empty($_SESSION['dir'])) {
+			$this->DIRClientConfig->setComponentName($_SESSION['dir']);
+			$this->DIRClientConfig->setResourceName($this->getClientName());
+			$this->DIRClientConfig->setLoadValues(true);
+			$this->DIRClientConfig->raiseEvent('OnDirectiveListLoad', $this, null);
 		}
 	}
 
-	public function onPreRender($param) {
-		parent::onPreRender($param);
-		if ($this->IsCallBack || $this->IsPostBack) {
-			return;
+	private function setAPIHosts() {
+		$def_host = null;
+		$api_hosts = $this->getModule('host_config')->getConfig();
+		$user_api_hosts = $this->User->getAPIHosts();
+		$client_address = $this->getClientAddress();
+		foreach ($api_hosts as $name => $attrs) {
+			if (in_array($name, $user_api_hosts) && $attrs['address'] === $client_address) {
+				$def_host = $name;
+				break;
+			}
 		}
-		if (!empty($_SESSION['dir'])) {
-			$this->ClientConfig->setComponentName($_SESSION['dir']);
-			$this->ClientConfig->setResourceName($this->getClientName());
-			$this->ClientConfig->setLoadValues(true);
-			$this->ClientConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+		$this->UserAPIHosts->DataSource = array_combine($user_api_hosts, $user_api_hosts);
+		if ($def_host) {
+			$this->UserAPIHosts->SelectedValue = $def_host;
+		} else {
+			$this->UserAPIHosts->SelectedValue = $this->User->getDefaultAPIHost();
+		}
+		$this->UserAPIHosts->dataBind();
+		if (count($user_api_hosts) === 1) {
+			$this->UserAPIHostsContainter->Visible = false;
+		}
+	}
+
+	private function getFDName() {
+		$fdname = null;
+		if (!$this->User->isUserAPIHost($this->UserAPIHosts->SelectedValue)) {
+			// Validation error. Somebody manually modified select values
+			return $fdname;
+		}
+		$result = $this->getModule('api')->get(['config'], $this->UserAPIHosts->SelectedValue);
+		if ($result->error === 0) {
+			for ($i = 0; $i < count($result->output); $i++) {
+				if ($result->output[$i]->component_type === 'fd' && $result->output[$i]->state) {
+					$fdname = $result->output[$i]->component_name;
+				}
+
+			}
+		}
+		return $fdname;
+	}
+
+	public function loadFDFileDaemonConfig($sender, $param) {
+		$this->DIRClientConfig->unloadDirectives();
+		$component_name = $this->getFDName();
+		if (!is_null($component_name)) {
+			$this->FDFileDaemonConfigErr->Display = 'None';
+			$this->FDFileDaemonConfig->setHost($this->UserAPIHosts->SelectedValue);
+			$this->FDFileDaemonConfig->setComponentName($component_name);
+			$this->FDFileDaemonConfig->setResourceName($component_name);
+			$this->FDFileDaemonConfig->setLoadValues(true);
+			$this->FDFileDaemonConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+		} else {
+			$this->FDFileDaemonConfigErr->Display = 'Dynamic';
+		}
+	}
+
+	public function loadFDResourcesConfig($sender, $param) {
+		$resource_type = $param->getCallbackParameter();
+		$this->DIRClientConfig->unloadDirectives();
+		$this->FDFileDaemonConfig->unloadDirectives();
+		$component_name = $this->getFDName();
+		if (!is_null($component_name) && !empty($resource_type)) {
+			$this->FileDaemonResourcesConfig->setHost($this->UserAPIHosts->SelectedValue);
+			$this->FileDaemonResourcesConfig->setResourceType($resource_type);
+			$this->FileDaemonResourcesConfig->setComponentName($component_name);
+			$this->FileDaemonResourcesConfig->loadResourceListTable();
+		} else {
+			$this->FileDaemonResourcesConfig->showError(true);
 		}
 	}
 
@@ -125,6 +223,24 @@ class ClientView extends BaculumWebPage {
 	 */
 	public function getClientName() {
 		return $this->getViewState(self::CLIENT_NAME);
+	}
+
+	/**
+	 * Set client address.
+	 *
+	 * @return none;
+	 */
+	public function setClientAddress($address) {
+		$this->setViewState(self::CLIENT_ADDRESS, $address);
+	}
+
+	/**
+	 * Get client address.
+	 *
+	 * @return string address
+	 */
+	public function getClientAddress() {
+		return $this->getViewState(self::CLIENT_ADDRESS);
 	}
 
 	public function status($sender, $param) {

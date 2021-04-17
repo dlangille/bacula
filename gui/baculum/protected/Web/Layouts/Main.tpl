@@ -39,6 +39,17 @@
 				<span id="msg_envelope" class="w3-tag w3-large w3-green w3-text-white w3-right w3-padding-small w3-margin-top w3-margin-right" style="cursor: pointer;<%=$this->User->isInRole(WebUserRoles::ADMIN) === false ? 'display: none' : ''%>" title="<%[ Display messages log window ]%>">
 					<i class="fas fa-envelope w3-large"></i>
 				</span>
+				<com:TLabel ID="UserAPIHostsContainter"CssClass="w3-right w3-margin-top w3-margin-right">
+					<%[ API host: ]%>
+					<com:TDropDownList
+						ID="UserAPIHosts"
+						CssClass="w3-select w3-border w3-small"
+						OnTextChanged="setAPIHost"
+						AutoPostBack="true"
+						Width="200px"
+						Height="34px"
+					/>
+				</com:TLabel>
 				<script type="text/javascript">
 					var SIZE_VALUES_UNIT = '<%=(count($this->web_config) > 0 && key_exists('size_values_unit', $this->web_config['baculum'])) ? $this->web_config['baculum']['size_values_unit'] : WebConfig::DEF_SIZE_VAL_UNIT%>';
 					var DATE_TIME_FORMAT = '<%=(count($this->web_config) > 0 && key_exists('date_time_format', $this->web_config['baculum'])) ? $this->web_config['baculum']['date_time_format'] : WebConfig::DEF_DATE_TIME_FORMAT%>';

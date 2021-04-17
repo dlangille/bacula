@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -53,12 +53,33 @@ class BaculumWebPage extends BaculumPage {
 			// without config there is no way to call api below
 			return;
 		}
+
+		if (!$this->IsCallBack && !$this->IsPostBack && !$this->isDefaultAPIHost()) {
+			$this->goToPage('SelectAPIHost');
+			// without API host selected we can't continue
+			return;
+		}
+
 		Logging::$debug_enabled = (isset($this->web_config['baculum']['debug']) && $this->web_config['baculum']['debug'] == 1);
 		if (!$this->IsPostBack && !$this->IsCallBack) {
 			$this->postInitActions();
 			$this->getModule('api')->initSessionCache(true);
 			$this->setSessionUserVars();
 		}
+	}
+
+	/**
+	 * Check if default API host is set.
+	 * If it isn't direct to API host selection page.
+	 *
+	 * @return none
+	 */
+	private function isDefaultAPIHost() {
+		$def_api_host = $this->User->getDefaultAPIHost();
+		$auth = $this->getModule('auth');
+		$page = $this->Service->getRequestedPagePath();
+		$pages_no_host = [$auth->getLoginPage(), 'SelectAPIHost'];
+		return (!is_null($def_api_host) || in_array($page, $pages_no_host));
 	}
 
 	/**

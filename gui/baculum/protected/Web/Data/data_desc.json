@@ -1803,7 +1803,7 @@
 		},
 		"Messages": {
 			"Name": {
-				"Required": false,
+				"Required": true,
 				"ValueType": "name",
 				"DefaultValue": 0,
 				"FieldType": "TextBox",
@@ -3490,7 +3490,7 @@
 		},
 		"Messages": {
 			"Name": {
-				"Required": false,
+				"Required": true,
 				"ValueType": "name",
 				"DefaultValue": 0,
 				"FieldType": "TextBox",
@@ -4227,7 +4227,7 @@
 		},
 		"Messages": {
 			"Name": {
-				"Required": false,
+				"Required": true,
 				"ValueType": "name",
 				"DefaultValue": 0,
 				"FieldType": "TextBox",

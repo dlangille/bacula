@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -70,7 +70,6 @@ class WebUserConfig extends ConfigFileModule {
 		'description',
 		'email',
 		'roles',
-		'api_hosts',
 		'enabled',
 		'ips'
 	];
@@ -97,6 +96,14 @@ class WebUserConfig extends ConfigFileModule {
 				continue;
 			}
 			$user_config['username'] = $username;
+			// for API hosts backward compatibility
+			if (key_exists('api_hosts', $user_config)) {
+				if (!is_array($user_config['api_hosts'])) {
+					$user_config['api_hosts'] = !empty($user_config['api_hosts']) ? [$user_config['api_hosts']] : [];
+				}
+			} else {
+				$user_config['api_hosts'] = [];
+			}
 			$config[$username] = $user_config;
 		}
 		return $config;

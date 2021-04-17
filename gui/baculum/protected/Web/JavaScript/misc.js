@@ -989,9 +989,9 @@ function openElementOnCursor(e, element, offsetX, offsetY) {
 		offsetY = 0;
 	}
 	var x = (e.clientX + offsetX).toString();
-	var y = (e.clientY + offsetY + window.pageYOffset).toString();
+	var y = (e.clientY + offsetY).toString();
 	$('#' + element).css({
-		position: 'absolute',
+		position: 'fixed',
 		left: x + 'px',
 		top: y + 'px',
 		zIndex: 1000

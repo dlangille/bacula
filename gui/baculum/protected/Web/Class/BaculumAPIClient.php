@@ -292,7 +292,7 @@ class BaculumAPIClient extends WebModule {
 		$cached = null;
 		$ret = null;
 		if (is_null($host)) {
-			$host = $this->User->getAPIHosts();
+			$host = $this->User->getDefaultAPIHost();
 		}
 		if ($use_cache === true) {
 			$cached = $this->getSessionCache($host, $params);
@@ -333,7 +333,7 @@ class BaculumAPIClient extends WebModule {
 	 */
 	public function set(array $params, array $options = array(), $host = null, $show_error = true) {
 		if (is_null($host)) {
-			$host = $this->User->getAPIHosts();
+			$host = $this->User->getDefaultAPIHost();
 		}
 		$host_cfg = $this->getHostParams($host);
 		$uri = $this->getURIResource($host, $params);
@@ -370,7 +370,7 @@ class BaculumAPIClient extends WebModule {
 	 */
 	public function create(array $params, array $options, $host = null, $show_error = true) {
 		if (is_null($host)) {
-			$host = $this->User->getAPIHosts();
+			$host = $this->User->getDefaultAPIHost();
 		}
 		$host_cfg = $this->getHostParams($host);
 		$uri = $this->getURIResource($host, $params);
@@ -402,7 +402,7 @@ class BaculumAPIClient extends WebModule {
 	 */
 	public function remove(array $params, $host = null, $show_error = true) {
 		if (is_null($host)) {
-			$host = $this->User->getAPIHosts();
+			$host = $this->User->getDefaultAPIHost();
 		}
 		$host_cfg = $this->getHostParams($host);
 		$uri = $this->getURIResource($host, $params);

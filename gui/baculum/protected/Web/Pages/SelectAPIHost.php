@@ -19,46 +19,34 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
- 
-Prado::using('Application.Common.Class.Params');
-Prado::using('Application.Web.Class.WebUserRoles');
+
+Prado::using('Application.Web.Class.BaculumWebPage');
 
 /**
- * Main layout class.
+ * Select API host page.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
- * @category Layout
+ * @category Page
  * @package Baculum Web
  */
-class Main extends TTemplateControl {
-
-	public $web_config;
+class SelectAPIHost extends BaculumWebPage {
 
 	public function onInit($param) {
 		parent::onInit($param);
-		if ($this->getPage()->IsPostBack || $this->getPage()->IsCallBack) {
+		if ($this->IsPostBack || $this->IsCallBack) {
 			return;
 		}
 		$api_hosts = $this->User->getAPIHosts();
+		array_unshift($api_hosts, '');
 		$this->UserAPIHosts->DataSource = array_combine($api_hosts, $api_hosts);
-		$this->UserAPIHosts->SelectedValue = $this->User->getDefaultAPIHost();
 		$this->UserAPIHosts->dataBind();
-		if (count($api_hosts) === 1) {
-			$this->UserAPIHostsContainter->Visible = false;
-		}
-	}
-
-
-	public function onPreRender($param) {
-		parent::onPreRender($param);
-		$this->web_config = $this->Application->getModule('web_config')->getConfig();
 	}
 
 	public function setAPIHost($sender, $param) {
 		$api_host = $this->UserAPIHosts->SelectedValue;
 		if (!empty($api_host)) {
 			$this->User->setDefaultAPIHost($api_host);
-			$this->getResponse()->reload();
+			$this->goToDefaultPage();
 		}
 	}
 }

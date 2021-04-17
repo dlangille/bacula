@@ -20,27 +20,25 @@
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
 
-Prado::using('System.Web.UI.WebControls.TClientScript');
+Prado::using('System.Web.UI.TControl');
 
 /**
- * Baculum client script class.
+ * Baculum simple repeater item control.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
- * @category Client Script
- * @package Baculum Common
+ * @category Control
+ * @package Baculum Web
  */
-class BClientScript extends TClientScript {
+class BSimpleRepeaterItem extends \Prado\Web\UI\TControl implements \Prado\IDataRenderer {
 
-	const SCRIPTS_VERSION = 19;
+	private $_data = [];
 
-	public function getScriptUrl()
-	{
-		$url = parent::getScriptUrl();
-		if (!empty($url)) {
-			$url .= '?ver=' . self::SCRIPTS_VERSION;
-		}
-		return $url;
+	public function getData() {
+		return $this->_data;
 	}
 
+	public function setData($data) {
+		$this->_data = $data;
+	}
 }
 ?>

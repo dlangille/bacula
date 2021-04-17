@@ -2811,8 +2811,8 @@ msgstr "Роль по умолчанию для импортированных �
 msgid "Advanced options"
 msgstr "Расширенные настройки"
 
-msgid "Default API host for imported users:"
-msgstr "Хост API по умолчанию для импортированных пользователей:"
+msgid "Default API hosts for imported users:"
+msgstr "Default API hosts for imported users:"
 
 msgid "Log in"
 msgstr "Вход"
@@ -3312,3 +3312,35 @@ msgstr "Подсказка: Чтобы использовать массовые
 msgid "Mount volume"
 msgstr "Монтировать том"
 
+msgid "API hosts:"
+msgstr "API hosts:"
+
+msgid "Please select API host"
+msgstr "Please select API host"
+
+msgid "FD address"
+msgstr "FD address"
+
+msgid "FD port"
+msgstr "FD port"
+
+msgid "FD API host"
+msgstr "FD API host"
+
+msgid "Configure file daemon"
+msgstr "Configure file daemon"
+
+msgid "There was a problem with loading the resource configuration. Please check if selected API host is working and if it provides access to the resource configuration."
+msgstr "There was a problem with loading the resource configuration. Please check if selected API host is working and if it provides access to the resource configuration."
+
+msgid "SD API host"
+msgstr "SD API host"
+
+msgid "SD address"
+msgstr "SD address"
+
+msgid "SD port"
+msgstr "SD port"
+
+msgid "Configure storage daemon"
+msgstr "Configure storage daemon"

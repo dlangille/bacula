@@ -17,27 +17,24 @@
 			Visible="<%=!empty($_SESSION['sd'])%>"
 			OnClick="setStorage"
 		/>
-		<com:TActiveLinkButton
-			CssClass="w3-bar-item w3-button tab_btn"
-			Attributes.onclick="W3Tabs.open(this.id, 'configure_devices');"
-			Text="<%[ Configure devices ]%>"
-			Visible="<%=!empty($_SESSION['sd'])%>"
-			OnClick="setDevices"
-		/>
-		<com:TActiveLinkButton
-			CssClass="w3-bar-item w3-button tab_btn"
-			Attributes.onclick="W3Tabs.open(this.id, 'configure_autochanger');clear_node('#configure_storage  div.directive_value');"
-			Text="<%[ Configure autochanger ]%>"
-			Visible="<%=!empty($_SESSION['sd']) && $this->getIsAutochanger()%>"
-			OnClick="setAutochanger"
-		/>
+		<a id="btn_storagedaemon_config" href="javascript:void(0)" class="w3-bar-item w3-button tab_btn" onclick="load_sd_storagedaemon_config(); W3Tabs.open(this.id, 'configure_storage_daemon');">
+			<%[ Configure storage daemon ]%>
+		</a>
 		<com:TActiveLinkButton
 			CssClass="w3-bar-item w3-button tab_btn"
 			Attributes.onclick="W3Tabs.open(this.id, 'manage_autochanger');"
 			Text="<%[ Manage autochanger ]%>"
-			Visible="<%=!empty($_SESSION['sd']) && $this->getIsAutochanger()%>"
+			Visible="<%=$this->getIsAutochanger()%>"
 			OnCallback="loadAutochanger"
 		/>
+		<com:TLabel ID="UserAPIHostsContainter" CssClass="w3-right w3-margin-right">
+			<%[ SD API host ]%>
+			<com:TActiveDropDownList
+				ID="UserAPIHosts"
+				CssClass="w3-select w3-border"
+				Width="200px"
+			/>
+		</com:TLabel>
 	</div>
 	<div class="w3-container tab_item" id="storage_actions">
 		<com:TValidationSummary
@@ -56,7 +53,7 @@
 			ClientSide.OnLoading="$('#status_storage_loading').show();$('#status_storage_error').hide();"
 			ClientSide.OnSuccess="$('#status_storage_loading').hide(); $('#show_storage_container').hide();$('#status_storage_container').show();oGraphicalStorageStatus.set_refresh_timeout(document.getElementById('status_storage_refresh_interval').value);"
 			ClientSide.OnFailure="$('#status_storage_loading').hide();status_storage_show_error(parameter);"
-			Attributes.onclick="hide_action_text_output(event);"
+			Attributes.onclick="hide_first_tab_containers(event);"
 		>
 			<prop:Text><%=Prado::localize('Status storage')%> &nbsp;<i class="fa fa-file-medical-alt"></i></prop:Text>
 		</com:TActiveLinkButton>
@@ -143,45 +140,81 @@ var oStorageActions = {
 		</script>
 		<i id="status_storage_loading" class="fa fa-sync w3-spin" style="display: none; vertical-align: super;"></i> <span id="status_storage_error" class="w3-text-red" style="display: none"></span>
 		<com:TActivePanel ID="Autochanger" Display="None" Height="61px">
-				<div class="w3-left w3-margin-right">
-					<label><%[ Drive number: ]%></label>
-					<com:TActiveTextBox
-						ID="Drive"
-						AutoPostBack="false"
-						Text="0"
-						MaxLength="3"
-						CssClass="w3-input smallbox"
-					/>
-					<com:TDataTypeValidator
-						ID="DriveValidator"
-						ValidationGroup="AutoChangerGroup"
-						ControlToValidate="Drive"
-						ErrorMessage="<%[ Drive number must be integer. ]%>"
-						Display="None"
-						DataType="Integer"
-					/>
-				</div>
-				<div class="w3-left">
-					<%[ Slot number: ]%>
-					<com:TActiveTextBox
-						ID="Slot"
-						AutoPostBack="false"
-						Text="0"
-						MaxLength="3"
-						CssClass="w3-input smallbox"
-					/>
-					<com:TDataTypeValidator
-						ID="SlotValidator"
-						ValidationGroup="AutoChangerGroup"
-						ControlToValidate="Slot"
-						ErrorMessage="<%[ Slot number must be integer. ]%>"
-						Display="None"
-						DataType="Integer"
-					/>
-				</div>
+			<div class="w3-left w3-margin-right">
+				<label><%[ Drive number: ]%></label>
+				<com:TActiveTextBox
+					ID="Drive"
+					AutoPostBack="false"
+					Text="0"
+					MaxLength="3"
+					CssClass="w3-input smallbox"
+				/>
+				<com:TDataTypeValidator
+					ID="DriveValidator"
+					ValidationGroup="AutoChangerGroup"
+					ControlToValidate="Drive"
+					ErrorMessage="<%[ Drive number must be integer. ]%>"
+					Display="None"
+					DataType="Integer"
+				/>
+			</div>
+			<div class="w3-left">
+				<%[ Slot number: ]%>
+				<com:TActiveTextBox
+					ID="Slot"
+					AutoPostBack="false"
+					Text="0"
+					MaxLength="3"
+					CssClass="w3-input smallbox"
+				/>
+				<com:TDataTypeValidator
+					ID="SlotValidator"
+					ValidationGroup="AutoChangerGroup"
+					ControlToValidate="Slot"
+					ErrorMessage="<%[ Slot number must be integer. ]%>"
+					Display="None"
+					DataType="Integer"
+				/>
+			</div>
 		</com:TActivePanel>
 		<div id="storage_action_text_output" class="w3-code" style="display: none; clear: both;">
 			<pre id="storage_action_log"></pre>
+		</div>
+		<div id="storage_info_cards" class="w3-row w3-margin-top" style="display: flex; flex-wrap: wrap;">
+			<div class="w3-card w3-padding w3-margin-right w3-margin-bottom details_card">
+				<h4><%[ General ]%></h4>
+				<table style="width: 90%">
+					<tr>
+						<td><%[ SD address ]%></td>
+						<td><strong><com:TActiveLabel ID="OSDAddress" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ SD port ]%></td>
+						<td><strong><com:TActiveLabel ID="OSDPort" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Running jobs ]%></td>
+						<td><strong><com:TActiveLabel ID="ORunningJobs" /></strong></td>
+					</tr>
+				</table>
+			</div>
+			<div class="w3-card w3-padding w3-margin-right w3-margin-bottom details_card">
+				<h4><%[ Device ]%></h4>
+				<table style="width: 90%">
+					<tr>
+						<td class="w3-half"><%[ Device name ]%></td>
+						<td><strong><com:TActiveLabel ID="ODeviceName" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Media type ]%></td>
+						<td><strong><com:TActiveLabel ID="OMediaType" CssClass="time" /></strong></td>
+					</tr>
+					<tr>
+						<td><%[ Autochanger ]%></td>
+						<td><strong><com:TActiveLabel ID="OAutoChanger" /></strong></td>
+					</tr>
+				</table>
+			</div>
 		</div>
 		<div id="status_storage_container" class="w3-clear w3-margin-top" style="display: none">
 			<div class="w3-right w3-margin-top w3-margin-right" title="<%[ To disable refreshing please type 0. ]%>">
@@ -1569,9 +1602,10 @@ var oGraphicalStorageStatus = {
 	}
 };
 
-function hide_action_text_output(e) {
+function hide_first_tab_containers(e) {
 	if (e.hasOwnProperty('originalEvent') && e.originalEvent.type == 'click') {
 		$('#storage_action_text_output').slideUp('fast');
+		$('#storage_info_cards').slideUp('fast');
 	}
 }
 
@@ -1601,36 +1635,72 @@ MonitorParams = {
 	</div>
 	<div class="w3-container tab_item" id="configure_storage" style="display: none">
 		<com:Application.Web.Portlets.BaculaConfigDirectives
-			ID="StorageConfig"
+			ID="DIRStorageConfig"
 			ComponentType="dir"
 			ResourceType="Storage"
 			ShowCancelButton="false"
 		/>
 	</div>
-	<div class="w3-container tab_item" id="configure_devices" style="display: none">
-		<com:TActiveRepeater ID="Devices">
-			<prop:HeaderTemplate>
-				<table id="storage_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom">
-					<thead>
-						<tr>
-							<th><%[ Device name  ]%></th>
-							<th><%[ Autochanger ]%></th>
-							<th class="w3-center"><%[ Actions ]%></th>
-						</tr>
-					</thead>
-			</prop:HeaderTemplate>
-			<prop:ItemTemplate>
-				<tr>
-					<td><%#$this->Data%></td>
-					<td><%=$this->TemplateControl->IsAutochanger ? $this->TemplateControl->getDeviceName() : '-'%></td>
-					<td class="w3-center"><button type="button" class="w3-button w3-green" onclick="document.location.href='<%=$this->Service->constructUrl('DeviceView', array('storageid' => $this->TemplateControl->getStorageId(), 'device' => $this->Data))%>';"><i class="fa fa-list-ul"></i> &nbsp;<%[ Details ]%></button></td>
-				</tr>
-			</prop:ItemTemplate>
-			<prop:FooterTemplate>
-				</table>
-			</prop:FooterTemplate>
-		</com:TActiveRepeater>
-		</table>
+	<div class="w3-container tab_item" id="configure_storage_daemon" style="display: none">
+		<com:TCallback ID="LoadStorageDaemonConfig" OnCallback="loadSDStorageDaemonConfig" />
+		<script>
+function load_sd_storagedaemon_config() {
+	var cb = <%=$this->LoadStorageDaemonConfig->ActiveControl->Javascript%>;
+	cb.dispatch();
+}
+		</script>
+		<com:TCallback ID="LoadStorageDaemonResourcesConfig" OnCallback="loadSDResourcesConfig" />
+		<script>
+function load_sd_res_config(resource) {
+	var cb = <%=$this->LoadStorageDaemonResourcesConfig->ActiveControl->Javascript%>;
+	cb.setCallbackParameter(resource);
+	cb.dispatch();
+}
+		</script>
+		<div class="w3-row w3-margin-bottom">
+			<a href="javascript:void(0)" onclick="load_sd_storagedaemon_config(); W3SubTabs.open('sd_storagedaemon_config_btn', 'sd_storagedaemon_config_form');">
+				<div id="sd_storagedaemon_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding w3-border-red">Storage</div>
+			 </a>
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Director'); W3SubTabs.open('storagedaemon_director_config_btn', 'sd_resources_config_form');">
+				<div id="storagedaemon_director_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Director</div>
+			</a>
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Device'); W3SubTabs.open('storagedaemon_device_config_btn', 'sd_resources_config_form');">
+				<div id="storagedaemon_device_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Device</div>
+			</a>
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Autochanger'); W3SubTabs.open('storagedaemon_autochanger_config_btn', 'sd_resources_config_form');">
+				<div id="storagedaemon_autochanger_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Autochanger</div>
+			</a>
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Messages'); W3SubTabs.open('storagedaemon_messages_config_btn', 'sd_resources_config_form');">
+				<div id="storagedaemon_messages_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Messages</div>
+			</a>
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Cloud'); W3SubTabs.open('storagedaemon_cloud_config_btn', 'sd_resources_config_form');">
+				<div id="storagedaemon_cloud_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Cloud</div>
+			</a>
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Statistics'); W3SubTabs.open('storagedaemon_statistics_config_btn', 'sd_resources_config_form');">
+				<div id="storagedaemon_statistics_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Statistics</div>
+			</a>
+		</div>
+		<div id="sd_storagedaemon_config_form" class="subtab_item">
+			<com:TActiveLabel
+				ID="SDStorageDaemonConfigErr"
+				Text="<%[ There was a problem with loading the resource configuration. Please check if selected API host is working and if it provides access to the resource configuration. ]%>"
+				CssClass="w3-text-red"
+				Display="None"
+			/>
+			<com:Application.Web.Portlets.BaculaConfigDirectives
+				ID="SDStorageDaemonConfig"
+				ComponentType="sd"
+				ResourceType="Storage"
+				ShowCancelButton="false"
+			/>
+		</div>
+		<div id="sd_resources_config_form" class="subtab_item" style="display: none">
+			<com:Application.Web.Portlets.BaculaConfigResourceList
+				ID="StorageDaemonResourcesConfig"
+				ComponentType="sd"
+				ResourceList="<%=[[ 'name' => 'Name', 'label' => 'Name' ]]%>"
+			/>
+		</div>
 	</div>
 	<div class="w3-container tab_item" id="configure_autochanger" style="display: none">
 		<com:Application.Web.Portlets.BaculaConfigDirectives

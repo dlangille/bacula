@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -37,6 +37,7 @@ class WebUser extends TUser {
 	const EMAIL = 'Email';
 	const DESCRIPTION = 'Description';
 	const API_HOSTS = 'ApiHosts';
+	const DEFAULT_API_HOST = 'DefaultApiHost';
 	const IPS = 'Ips';
 	const ENABLED = 'Enabled';
 	const IN_CONFIG = 'InConfig';
@@ -162,10 +163,8 @@ class WebUser extends TUser {
 
 	/**
 	 * Set API hosts.
-	 * So far is supported only one API host per user.
-	 * In the future this method can support more API hosts per user.
 	 *
-	 * @param string $api_hosts API hosts
+	 * @param array $api_hosts user API hosts
 	 * @return none
 	 */
 	public function setAPIHosts($api_hosts) {
@@ -175,18 +174,78 @@ class WebUser extends TUser {
 	/**
 	 * API hosts getter.
 	 *
-	 * @return string API host
+	 * @return array user API hosts
 	 */
 	public function getAPIHosts() {
+		$api_hosts = [];
 		$hosts = $this->getState(self::API_HOSTS);
-		$hosts = explode(',', $hosts);
-		if (count($hosts) == 1 && !empty($hosts[0])) {
-			$api_hosts = $hosts[0];
+		/**
+		 * This checking is for backward compatibility because previously
+		 * hosts were written in session as string. Now it is written as array.
+		 */
+		if (is_string($hosts)) {
+			if (!empty($hosts)) {
+				$hosts = explode(',', $hosts);
+			} else {
+				$hosts = [];
+			}
+		} elseif (is_null($hosts)) {
+			$hosts = [];
+		}
+
+		if (count($hosts) > 0) {
+			$api_hosts = $hosts;
 		} else {
-			// default API host
-			$api_hosts = HostConfig::MAIN_CATALOG_HOST;
+			// add default API host
+			$api_hosts[] = HostConfig::MAIN_CATALOG_HOST;
 		}
 		return $api_hosts;
+	}
+
+	/**
+	 * Set default API host for user.
+	 * It determines which host will be used as default API host to login
+	 * to Baculum Web interface. This host needs to have at least the catalog
+	 * and the console capabilities.
+	 *
+	 * @param string $api_host default API host
+	 * @return none
+	 */
+	public function setDefaultAPIHost($api_host) {
+		$this->setState(self::DEFAULT_API_HOST, $api_host);
+		$application = $this->getManager()->getApplication();
+		$application->getModule('auth')->updateSessionUser($this);
+	}
+
+	/**
+	 * Get default API host for user.
+	 * If default API host is not set, there happens a try to determine
+	 * this host if user has only one API host assigned.
+	 *
+	 * @return string|null default API host or null if no default host set
+	 */
+	public function getDefaultAPIHost() {
+		$def_host = $this->getState(self::DEFAULT_API_HOST);
+		if (!$def_host) {
+			$api_hosts = $this->getAPIHosts();
+			if (count($api_hosts) == 1) {
+				// only one host assigned, so use it as default host
+				$def_host = $api_hosts[0];
+				$this->setDefaultAPIHost($def_host);
+			}
+		}
+		return $def_host;
+	}
+
+	/**
+	 * Check if given API host belongs to user API hosts.
+	 *
+	 * @param string $api_host API host to check
+	 * @return boolean true if API host belongs to user API hosts, otherwise false
+	 */
+	public function isUserAPIHost($api_host) {
+		$api_hosts = $this->getAPIHosts();
+		return in_array($api_host, $api_hosts);
 	}
 
 	/**

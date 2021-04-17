@@ -188,7 +188,7 @@ class Security extends BaculumWebPage {
 	 */
 	public function initUserWindow() {
 		// set API hosts
-		$this->setAPIHosts($this->UserAPIHost);
+		$this->setAPIHosts($this->UserAPIHosts, null, false);
 
 		// set roles
 		$this->setRoles($this->UserRoles);
@@ -220,11 +220,14 @@ class Security extends BaculumWebPage {
 	 *
 	 * @param object $control control which contains API host list
 	 * @param mixed $def_val default value or null if no default value to set
+	 * @param boolean determines if add first blank item
 	 * @return none
 	 */
-	private function setAPIHosts($control, $def_val = null) {
+	private function setAPIHosts($control, $def_val = null, $add_blank_item = true) {
 		$api_hosts = array_keys($this->getModule('host_config')->getConfig());
-		array_unshift($api_hosts, '');
+		if ($add_blank_item) {
+			array_unshift($api_hosts, '');
+		}
 		$control->DataSource = array_combine($api_hosts, $api_hosts);
 		if ($def_val) {
 			$control->SelectedValue = $def_val;
@@ -265,6 +268,8 @@ class Security extends BaculumWebPage {
 			$this->UserDescription->Text = $config['description'];
 			$this->UserEmail->Text = $config['email'];
 			$this->UserPassword->Text = '';
+
+			// set roles
 			$selected_indices = [];
 			$roles = explode(',', $config['roles']);
 			for ($i = 0; $i < $this->UserRoles->getItemCount(); $i++) {
@@ -273,7 +278,16 @@ class Security extends BaculumWebPage {
 				}
 			}
 			$this->UserRoles->setSelectedIndices($selected_indices);
-			$this->UserAPIHost->SelectedValue = $config['api_hosts'];
+
+			$selected_indices = [];
+			$api_hosts = $config['api_hosts'];
+			for ($i = 0; $i < $this->UserAPIHosts->getItemCount(); $i++) {
+				if (in_array($this->UserAPIHosts->Items[$i]->Value, $api_hosts)) {
+					$selected_indices[] = $i;
+				}
+			}
+
+			$this->UserAPIHosts->setSelectedIndices($selected_indices);
 			$this->UserIps->Text = $config['ips'];
 			$this->UserEnabled->Checked = ($config['enabled'] == 1);
 		}
@@ -316,6 +330,7 @@ class Security extends BaculumWebPage {
 		$config['description'] = $this->UserDescription->Text;
 		$config['email'] = $this->UserEmail->Text;
 
+		// set roles config values
 		$selected_indices = $this->UserRoles->getSelectedIndices();
 		$roles = [];
 		foreach ($selected_indices as $indice) {
@@ -326,7 +341,18 @@ class Security extends BaculumWebPage {
 			}
 		}
 		$config['roles'] = implode(',', $roles);
-		$config['api_hosts'] = $this->UserAPIHost->SelectedValue;
+
+		// set API hosts config values
+		$selected_indices = $this->UserAPIHosts->getSelectedIndices();
+		$api_hosts = [];
+		foreach ($selected_indices as $indice) {
+			for ($i = 0; $i < $this->UserAPIHosts->getItemCount(); $i++) {
+				if ($i === $indice) {
+					$api_hosts[] = $this->UserAPIHosts->Items[$i]->Value;
+				}
+			}
+		}
+		$config['api_hosts'] = $api_hosts;
 		$config['ips'] = $this->trimIps($this->UserIps->Text);
 		$config['enabled'] = $this->UserEnabled->Checked ? 1 : 0;
 		$result = $this->getModule('user_config')->setUserConfig($username, $config);
@@ -600,7 +626,7 @@ class Security extends BaculumWebPage {
 			$this->setRoles($this->GetUsersDefaultRole, WebUserRoles::NORMAL);
 
 			// set API hosts
-			$this->setAPIHosts($this->GetUsersDefaultAPIHost, HostConfig::MAIN_CATALOG_HOST);
+			$this->setAPIHosts($this->GetUsersDefaultAPIHosts, HostConfig::MAIN_CATALOG_HOST, false);
 		}
 
 		$params = $this->getBasicParams();
@@ -786,7 +812,7 @@ class Security extends BaculumWebPage {
 			$this->setRoles($this->GetUsersDefaultRole, WebUserRoles::NORMAL);
 
 			// set API hosts
-			$this->setAPIHosts($this->GetUsersDefaultAPIHost, HostConfig::MAIN_CATALOG_HOST);
+			$this->setAPIHosts($this->GetUsersDefaultAPIHosts, HostConfig::MAIN_CATALOG_HOST, false);
 		}
 
 		$ldap = $this->getModule('ldap');
@@ -1075,7 +1101,16 @@ class Security extends BaculumWebPage {
 		$roles = implode(',', $role_list);
 
 		// Get default API hosts for imported users
-		$api_hosts = $this->GetUsersDefaultAPIHost->SelectedValue;
+		$selected_indices = $this->GetUsersDefaultAPIHosts->getSelectedIndices();
+		$api_host_list = [];
+		foreach ($selected_indices as $indice) {
+			for ($i = 0; $i < $this->GetUsersDefaultAPIHosts->getItemCount(); $i++) {
+				if ($i === $indice) {
+					$api_host_list[] = $this->GetUsersDefaultAPIHosts->Items[$i]->Value;
+				}
+			}
+		}
+		$api_hosts = implode(',', $api_host_list);
 
 		// Get default IP address restrictions for imported users
 		$ips = $this->trimIps($this->GetUsersDefaultIps->Text);
@@ -1242,7 +1277,7 @@ class Security extends BaculumWebPage {
 			$this->ConsoleConfig->setLoadValues(false);
 			$this->getCallbackClient()->callClientFunction('oBaculaConfigSection.show_sections', [true]);
 		}
-		$this->ConsoleConfig->setHost($this->User->getAPIHosts());
+		$this->ConsoleConfig->setHost($this->User->getDefaultAPIHost());
 		$this->ConsoleConfig->setComponentName($_SESSION['dir']);
 		$this->ConsoleConfig->raiseEvent('OnDirectiveListLoad', $this, null);
 	}
@@ -1259,7 +1294,7 @@ class Security extends BaculumWebPage {
 	public function removeConsoles($sender, $param) {
 		$consoles = explode('|', $param->getCallbackParameter());
 		$res = new BaculaConfigResources();
-		$config = $res->getConfigData($this->User->getAPIHosts(), 'dir');
+		$config = $res->getConfigData($this->User->getDefaultAPIHost(), 'dir');
 		for ($i = 0; $i < count($consoles); $i++) {
 			$res->removeResourceFromConfig(
 				$config,
@@ -1270,7 +1305,7 @@ class Security extends BaculumWebPage {
 		$this->getModule('api')->set(
 			array('config', 'dir'),
 			array('config' => json_encode($config)),
-			$this->User->getAPIHosts(),
+			$this->User->getDefaultAPIHost(),
 			false
 		);
 

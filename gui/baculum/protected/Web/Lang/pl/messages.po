@@ -2811,8 +2811,8 @@ msgstr "Domyślna rola dla zaimportowanych użytkowników:"
 msgid "Advanced options"
 msgstr "Opcje zaawansowane"
 
-msgid "Default API host for imported users:"
-msgstr "Domyślny host API dla zaimportowanych użytkowników:"
+msgid "Default API hosts for imported users:"
+msgstr "Domyślne hosty API dla zaimportowanych użytkowników:"
 
 msgid "Log in"
 msgstr "Zaloguj"
@@ -3312,3 +3312,35 @@ msgstr "Wskazówka: W celu użycia akcji zbiorczych zmieniarki taśm, proszę za
 msgid "Mount volume"
 msgstr "Montuj wolumen"
 
+msgid "API hosts:"
+msgstr "Hosty API:"
+
+msgid "Please select API host"
+msgstr "Proszę wybrać host API"
+
+msgid "FD address"
+msgstr "Adres FD"
+
+msgid "FD port"
+msgstr "Port FD"
+
+msgid "FD API host"
+msgstr "Host API FD"
+
+msgid "Configure file daemon"
+msgstr "Konfiguruj file daemon"
+
+msgid "There was a problem with loading the resource configuration. Please check if selected API host is working and if it provides access to the resource configuration."
+msgstr "Wystąpił problem z załadowaniem konfiguracji zasobu. Proszę sprawdzić czy wybrany host API działa i czy dostarcza dostęp do konfiguracji tego zasobu."
+
+msgid "SD API host"
+msgstr "Host API SD"
+
+msgid "SD address"
+msgstr "Adres SD"
+
+msgid "SD port"
+msgstr "Port SD"
+
+msgid "Configure storage daemon"
+msgstr "Konfiguruj storage daemon"

@@ -697,13 +697,16 @@
 							</div> &nbsp;<i class="fa fa-asterisk w3-text-red opt_req"></i>
 						</div>
 						<div class="w3-row w3-section">
-							<div class="w3-col w3-third"><com:TLabel ForControl="GetUsersDefaultAPIHost" Text="<%[ Default API host for imported users: ]%>" /></div>
+							<div class="w3-col w3-third"><com:TLabel ForControl="GetUsersDefaultAPIHosts" Text="<%[ Default API hosts for imported users: ]%>" /></div>
 							<div class="w3-half">
-								<com:TActiveDropDownList
-									ID="GetUsersDefaultAPIHost"
+								<com:TActiveListBox
+									ID="GetUsersDefaultAPIHosts"
+									SelectionMode="Multiple"
+									Rows="6"
 									CssClass="w3-select w3-border"
 									AutoPostBack="false"
 								/>
+								<p class="w3-text-black" style="margin: 0 16px 0 0"><%[ Use CTRL + left-click to multiple item selection ]%></p>
 							</div>
 						</div>
 						<div class="w3-row w3-section" title="<%[ Comma separated IP addresses. Using asterisk character, there is also possible to provide subnet, for example: 192.168.1.* ]%>">
@@ -1005,7 +1008,7 @@ oLdapUserSecurity.init();
 					<th class="w3-center"><%[ Description ]%></th>
 					<th class="w3-center"><%[ E-mail ]%></th>
 					<th class="w3-center"><%[ Roles ]%></th>
-					<th class="w3-center"><%[ API host ]%></th>
+					<th class="w3-center"><%[ API hosts ]%></th>
 					<th class="w3-center"><%[ IP address restrictions ]%></th>
 					<th class="w3-center"><%[ Enabled ]%></th>
 					<th class="w3-center"><%[ Action ]%></th>
@@ -1020,7 +1023,7 @@ oLdapUserSecurity.init();
 					<th class="w3-center"><%[ Description ]%></th>
 					<th class="w3-center"><%[ E-mail ]%></th>
 					<th class="w3-center"><%[ Roles ]%></th>
-					<th class="w3-center"><%[ API host ]%></th>
+					<th class="w3-center"><%[ API hosts ]%></th>
 					<th class="w3-center"><%[ IP address restrictions ]%></th>
 					<th class="w3-center"><%[ Enabled ]%></th>
 					<th class="w3-center"><%[ Action ]%></th>
@@ -1250,7 +1253,7 @@ var oUsers = {
 			'<%=$this->UserEmail->ClientID%>',
 			'<%=$this->UserPassword->ClientID%>',
 			'<%=$this->UserRoles->ClientID%>',
-			'<%=$this->UserAPIHost->ClientID%>',
+			'<%=$this->UserAPIHosts->ClientID%>',
 			'<%=$this->UserIps->ClientID%>'
 		].forEach(function(id) {
 			document.getElementById(id).value = '';
@@ -1391,13 +1394,16 @@ $(function() {
 						</div> &nbsp;<i class="fa fa-asterisk w3-text-red opt_req"></i>
 					</div>
 					<div class="w3-row w3-section">
-						<div class="w3-col w3-third"><com:TLabel ForControl="UserAPIHost" Text="<%[ API host: ]%>" CssClass="w3-xlarge"/></div>
+						<div class="w3-col w3-third"><com:TLabel ForControl="UserAPIHosts" Text="<%[ API hosts: ]%>" CssClass="w3-xlarge"/></div>
 						<div class="w3-half">
-							<com:TActiveDropDownList
-								ID="UserAPIHost"
+							<com:TActiveListBox
+								ID="UserAPIHosts"
+								SelectionMode="Multiple"
+								Rows="6"
 								CssClass="w3-select w3-border"
 								AutoPostBack="false"
 							/>
+							<p class="w3-text-black" style="margin: 0 16px 0 0"><%[ Use CTRL + left-click to multiple item selection ]%></p>
 						</div>
 					</div>
 					<div class="w3-row w3-section">

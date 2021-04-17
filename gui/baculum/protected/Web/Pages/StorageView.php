@@ -40,6 +40,7 @@ class StorageView extends BaculumWebPage {
 
 	const STORAGEID = 'StorageId';
 	const STORAGE_NAME = 'StorageName';
+	const STORAGE_ADDRESS = 'StorageAddress';
 	const IS_AUTOCHANGER = 'IsAutochanger';
 	const DEVICE_NAME = 'DeviceName';
 
@@ -64,137 +65,63 @@ class StorageView extends BaculumWebPage {
 				}
 			}
 		}
-		$storage = $this->Application->getModule('api')->get(
-			array('storages', $storageid),
+		$this->setStorageId($storageid);
+		$storageshow = $this->getModule('api')->get(
+			['storages', $storageid, 'show', '?output=json'],
 			null,
-			true,
-			self::USE_CACHE
-		)->output;
-		$this->setStorageId($storage->storageid);
-		$this->setStorageName($storage->name);
-		$is_autochanger = ($storage->autochanger == 1);
-		$this->setIsAutochanger($is_autochanger);
-		$this->Autochanger->Display = $is_autochanger ? 'Dynamic': 'None';
-		$storageshow = $this->Application->getModule('api')->get(
-			array('storages', $storage->storageid, 'show')
-		)->output;
-		$this->setStorageDevice($storageshow);
-		$this->setDevices();
-	}
+			true
+		);
+		if ($storageshow->error === 0) {
+			$this->setStorageName($storageshow->output->name);
 
-	public function setStorageDevice($storageshow) {
-		/**
-		 * Note, it cannot be get by api config because user can have bdirjson not configured.
-		 */
-		for ($i = 0; $i < count($storageshow); $i++) {
-			if (preg_match('/^\s+DeviceName=(?P<device>[\s\S]+)\sMediaType=/', $storageshow[$i], $match) === 1) {
-				$this->setDeviceName($match['device']);
+			if (property_exists($storageshow->output, 'address')) {
+				$this->setStorageAddress($storageshow->output->address);
+				$this->OSDAddress->Text = $storageshow->output->address;
+			}
+			if (property_exists($storageshow->output, 'sdport')) {
+				$this->OSDPort->Text = $storageshow->output->sdport;
+			}
+			if (property_exists($storageshow->output, 'maxjobs') && property_exists($storageshow->output, 'numjobs')) {
+				$this->ORunningJobs->Text = $storageshow->output->numjobs . '/' . $storageshow->output->maxjobs;
+			}
+			if (property_exists($storageshow->output, 'devicename')) {
+				$this->setDeviceName($storageshow->output->devicename);
+				$this->ODeviceName->Text = $storageshow->output->devicename;
+			}
+			if (property_exists($storageshow->output, 'mediatype')) {
+				$this->OMediaType->Text = $storageshow->output->mediatype;
+			}
+			if (property_exists($storageshow->output, 'autochanger')) {
+				$is_autochanger = ($storageshow->output->autochanger == 1);
+				$this->setIsAutochanger($is_autochanger);
+				$this->OAutoChanger->Text = $is_autochanger ? Prado::localize('Yes') : Prado::localize('No');
+				$this->Autochanger->Display = $is_autochanger ? 'Dynamic': 'None';
 			}
 		}
+		$this->setAPIHosts();
 	}
 
-	public function setDevices() {
-		$devices = array();
-		if ($this->getIsAutochanger() && !empty($_SESSION['sd'])) {
-			/**
-			 * NOTE: Here is called only Main API host. For storage daemons
-			 * on other hosts it can cause a problem. So far, there
-			 * is no 100% way to unambiguously determine basing on storage daemon
-			 * configuration if autochanger comes from Main or from other API host.
-			 * The problem will be if on Main host is defined autochanger
-			 * with the same name as autochanger from requested Storage here.
-			 * @TODO: Find a way to solve it.
-			 */
-			$result = $this->Application->getModule('api')->get(
-				array(
-					'config',
-					'sd',
-					'Autochanger',
-					$this->getDeviceName()
-				)
-			);
-			if ($result->error === 0 && is_object($result->output)) {
-				$devices = $result->output->Device;
+	private function setAPIHosts() {
+		$def_host = null;
+		$api_hosts = $this->getModule('host_config')->getConfig();
+		$user_api_hosts = $this->User->getAPIHosts();
+		$storage_address = $this->getStorageAddress();
+		foreach ($api_hosts as $name => $attrs) {
+			if (in_array($name, $user_api_hosts) && $attrs['address'] === $storage_address) {
+				$def_host = $name;
+				break;
 			}
+		}
+		$this->UserAPIHosts->DataSource = array_combine($user_api_hosts, $user_api_hosts);
+		if ($def_host) {
+			$this->UserAPIHosts->SelectedValue = $def_host;
 		} else {
-			$devices = array($this->getDeviceName());
+			$this->UserAPIHosts->SelectedValue = $this->User->getDefaultAPIHost();
 		}
-		$this->Devices->DataSource = $devices;
-		$this->Devices->dataBind();
-	}
-
-	/**
-	 * Set storage storageid.
-	 *
-	 * @return none;
-	 */
-	public function setStorageId($storageid) {
-		$storageid = intval($storageid);
-		$this->setViewState(self::STORAGEID, $storageid, 0);
-	}
-
-	/**
-	 * Get storage storageid.
-	 *
-	 * @return integer storageid
-	 */
-	public function getStorageId() {
-		return $this->getViewState(self::STORAGEID, 0);
-	}
-
-	/**
-	 * Set storage name.
-	 *
-	 * @return none;
-	 */
-	public function setStorageName($storage_name) {
-		$this->setViewState(self::STORAGE_NAME, $storage_name);
-	}
-
-	/**
-	 * Get storage name.
-	 *
-	 * @return string storage name
-	 */
-	public function getStorageName() {
-		return $this->getViewState(self::STORAGE_NAME);
-	}
-
-	/**
-	 * Set device name.
-	 *
-	 * @return none;
-	 */
-	public function setDeviceName($device_name) {
-		$this->setViewState(self::DEVICE_NAME, $device_name);
-	}
-
-	/**
-	 * Get device name.
-	 *
-	 * @return string device name
-	 */
-	public function getDeviceName() {
-		return $this->getViewState(self::DEVICE_NAME);
-	}
-
-	/**
-	 * Check if storage is autochanger
-	 *
-	 * @return bool true if autochanger, otherwise false
-	 */
-	public function getIsAutochanger() {
-		return $this->getViewState(self::IS_AUTOCHANGER, false);
-	}
-
-	/**
-	 * Set autochanger value for storage
-	 *
-	 * @return none;
-	 */
-	public function setIsAutochanger($is_autochanger) {
-		settype($is_autochanger, 'bool');
-		$this->setViewState(self::IS_AUTOCHANGER, $is_autochanger);
+		$this->UserAPIHosts->dataBind();
+		if (count($user_api_hosts) === 1) {
+			$this->UserAPIHostsContainter->Visible = false;
+		}
 	}
 
 	public function status($sender, $param) {
@@ -255,6 +182,77 @@ class StorageView extends BaculumWebPage {
 		}
 
 		$this->getCallbackClient()->callClientFunction('init_graphical_storage_status', [$storage_status]);
+	}
+
+	private function getSDAPIHost() {
+		if (!$this->User->isUserAPIHost($this->UserAPIHosts->SelectedValue)) {
+			// Validation error. Somebody manually modified select values
+			return false;
+		}
+		return $this->UserAPIHosts->SelectedValue;
+	}
+
+	private function getSDName() {
+		if (!($host = $this->getSDAPIHost())) {
+			return;
+		}
+		$sdname = null;
+		$result = $this->getModule('api')->get(['config'], $host);
+		if ($result->error === 0) {
+			for ($i = 0; $i < count($result->output); $i++) {
+				if ($result->output[$i]->component_type === 'sd' && $result->output[$i]->state) {
+					$sdname = $result->output[$i]->component_name;
+				}
+
+			}
+		}
+		return $sdname;
+	}
+
+	public function setStorage($sender, $param) {
+		$this->SDStorageDaemonConfig->unloadDirectives();
+		if (!empty($_SESSION['dir'])) {
+			$this->DIRStorageConfig->setComponentName($_SESSION['dir']);
+			$this->DIRStorageConfig->setResourceName($this->getStorageName());
+			$this->DIRStorageConfig->setLoadValues(true);
+			$this->DIRStorageConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+		}
+	}
+
+	public function loadSDStorageDaemonConfig($sender, $param) {
+		if (!($host = $this->getSDAPIHost())) {
+			return;
+		}
+		$this->DIRStorageConfig->unloadDirectives();
+		$component_name = $this->getSDName();
+		if (!is_null($component_name)) {
+			$this->SDStorageDaemonConfigErr->Display = 'None';
+			$this->SDStorageDaemonConfig->setHost($host);
+			$this->SDStorageDaemonConfig->setComponentName($component_name);
+			$this->SDStorageDaemonConfig->setResourceName($component_name);
+			$this->SDStorageDaemonConfig->setLoadValues(true);
+			$this->SDStorageDaemonConfig->raiseEvent('OnDirectiveListLoad', $this, null);
+		} else {
+			$this->SDStorageDaemonConfigErr->Display = 'Dynamic';
+		}
+	}
+
+	public function loadSDResourcesConfig($sender, $param) {
+		if (!($host = $this->getSDAPIHost())) {
+			return;
+		}
+		$resource_type = $param->getCallbackParameter();
+		$this->DIRStorageConfig->unloadDirectives();
+		$this->SDStorageDaemonConfig->unloadDirectives();
+		$component_name = $this->getSDName();
+		if (!is_null($component_name) && !empty($resource_type)) {
+			$this->StorageDaemonResourcesConfig->setHost($host);
+			$this->StorageDaemonResourcesConfig->setResourceType($resource_type);
+			$this->StorageDaemonResourcesConfig->setComponentName($component_name);
+			$this->StorageDaemonResourcesConfig->loadResourceListTable();
+		} else {
+			$this->StorageDaemonResourcesConfig->showError(true);
+		}
 	}
 
 	private function actionLoading($result, $out_id, $refresh_func) {
@@ -378,14 +376,12 @@ class StorageView extends BaculumWebPage {
 			'drive' => $drive
 		];
 		$query = '?' . http_build_query($params);
-		$result = $this->getModule('api')->set(
-			[
-				'storages',
-				$this->getStorageId(),
-				'umount',
-				$query
-			]
-		);
+		$result = $this->getModule('api')->set([
+			'storages',
+			$this->getStorageId(),
+			'umount',
+			$query
+		]);
 		return $result;
 	}
 
@@ -431,14 +427,12 @@ class StorageView extends BaculumWebPage {
 			'drive' => $drive
 		];
 		$query = '?' . http_build_query($params);
-		$result = $this->getModule('api')->set(
-			[
-				'storages',
-				$this->getStorageId(),
-				'release',
-				$query
-			]
-		);
+		$result = $this->getModule('api')->set([
+			'storages',
+			$this->getStorageId(),
+			'release',
+			$query
+		]);
 		return $result;
 	}
 
@@ -471,19 +465,18 @@ class StorageView extends BaculumWebPage {
 		}
 	}
 
-	public function setStorage($sender, $param) {
-		$this->StorageConfig->setComponentName($_SESSION['sd']);
-		$this->StorageConfig->setResourceName($this->getStorageName());
-		$this->StorageConfig->setLoadValues(true);
-		$this->StorageConfig->raiseEvent('OnDirectiveListLoad', $this, null);
-	}
-
 	public function loadAutochanger($sender, $param) {
-		$result = $this->getModule('api')->get([
-			'devices',
-			$this->getDeviceName(),
-			'listall'
-		]);
+		if (!($host = $this->getSDAPIHost())) {
+			return;
+		}
+		$result = $this->getModule('api')->get(
+			[
+				'devices',
+				$this->getDeviceName(),
+				'listall'
+			],
+			$host
+		);
 		$cb = $this->getCallbackClient();
 		if ($result->error === 0) {
 			$cb->show('drive_list_container');
@@ -527,17 +520,27 @@ class StorageView extends BaculumWebPage {
 				$query
 			]);
 		} else {
-			$parameters = [
-				'drive' => $data->drive,
-				'slot' => $data->slot
-			];
-			$query = '?' . http_build_query($parameters);
-			$result = $this->getModule('api')->set([
-				'devices',
-				$this->getDeviceName(),
-				'load',
-				$query
-			]);
+			if ($host = $this->getSDAPIHost()) {
+				$parameters = [
+					'drive' => $data->drive,
+					'slot' => $data->slot
+				];
+				$query = '?' . http_build_query($parameters);
+				$result = $this->getModule('api')->set(
+					[
+						'devices',
+						$this->getDeviceName(),
+						'load',
+						$query
+					],
+					[],
+					$host
+				);
+			} else {
+				$result = new StdClass;
+				$result->error = DeviceError::ERROR_DEVICE_AUTOCHANGER_DRIVE_DOES_NOT_EXIST;
+				$result->output = Prado::localize('There was a problem with loading the resource configuration. Please check if selected API host is working and if it provides access to the resource configuration.');
+			}
 		}
 		if ($result->error === 0) {
 			$this->getCallbackClient()->callClientFunction(
@@ -592,17 +595,23 @@ class StorageView extends BaculumWebPage {
 	}
 
 	public function loadedDriveWithoutMount($sender, $param) {
+		if (!($host = $this->getSDAPIHost())) {
+			return;
+		}
 		$out_id = $param->getCallbackParameter();
 		$parameters = [
 			'out_id' => $out_id
 		];
 		$query = '?' . http_build_query($parameters);
-		$result = $this->getModule('api')->get([
-			'devices',
-			$this->getDeviceName(),
-			'load',
-			$query
-		]);
+		$result = $this->getModule('api')->get(
+			[
+				'devices',
+				$this->getDeviceName(),
+				'load',
+				$query
+			],
+			$host
+		);
 		$this->loadedDrive(
 			'oSlots.refresh_drive_without_mount_loading',
 			$out_id,
@@ -749,31 +758,44 @@ class StorageView extends BaculumWebPage {
 	}
 
 	private function transferSlots($slotsrc, $slotdest) {
+		if (!($host = $this->getSDAPIHost())) {
+			return;
+		}
 		$parameters = [
 			'slotsrc' => $slotsrc,
 			'slotdest' => $slotdest
 		];
 		$query = '?' . http_build_query($parameters);
-		$result = $this->getModule('api')->set([
-			'devices',
-			$this->getDeviceName(),
-			'transfer',
-			$query
-		]);
+		$result = $this->getModule('api')->set(
+			[
+				'devices',
+				$this->getDeviceName(),
+				'transfer',
+				$query
+			],
+			[],
+			$host
+		);
 		return $result;
 	}
 
 	private function getTransferOutput($out_id) {
+		if (!($host = $this->getSDAPIHost())) {
+			return;
+		}
 		$parameters = [
 			'out_id' => $out_id
 		];
 		$query = '?' . http_build_query($parameters);
-		$result = $this->getModule('api')->get([
-			'devices',
-			$this->getDeviceName(),
-			'transfer',
-			$query
-		]);
+		$result = $this->getModule('api')->get(
+			[
+				'devices',
+				$this->getDeviceName(),
+				'transfer',
+				$query
+			],
+			$host
+		);
 		return $result;
 	}
 
@@ -983,6 +1005,98 @@ class StorageView extends BaculumWebPage {
 			'oSlots.show_changer_loader',
 			[false]
 		);
+	}
+
+	/**
+	 * Set storage storageid.
+	 *
+	 * @return none;
+	 */
+	public function setStorageId($storageid) {
+		$storageid = intval($storageid);
+		$this->setViewState(self::STORAGEID, $storageid, 0);
+	}
+
+	/**
+	 * Get storage storageid.
+	 *
+	 * @return integer storageid
+	 */
+	public function getStorageId() {
+		return $this->getViewState(self::STORAGEID, 0);
+	}
+
+	/**
+	 * Set storage name.
+	 *
+	 * @return none;
+	 */
+	public function setStorageName($storage_name) {
+		$this->setViewState(self::STORAGE_NAME, $storage_name);
+	}
+
+	/**
+	 * Get storage name.
+	 *
+	 * @return string storage name
+	 */
+	public function getStorageName() {
+		return $this->getViewState(self::STORAGE_NAME);
+	}
+
+	/**
+	 * Set device name.
+	 *
+	 * @return none;
+	 */
+	public function setDeviceName($device_name) {
+		$this->setViewState(self::DEVICE_NAME, $device_name);
+	}
+
+	/**
+	 * Get device name.
+	 *
+	 * @return string device name
+	 */
+	public function getDeviceName() {
+		return $this->getViewState(self::DEVICE_NAME);
+	}
+
+	/**
+	 * Check if storage is autochanger
+	 *
+	 * @return bool true if autochanger, otherwise false
+	 */
+	public function getIsAutochanger() {
+		return $this->getViewState(self::IS_AUTOCHANGER, false);
+	}
+
+	/**
+	 * Set autochanger value for storage
+	 *
+	 * @return none;
+	 */
+	public function setIsAutochanger($is_autochanger) {
+		settype($is_autochanger, 'bool');
+		$this->setViewState(self::IS_AUTOCHANGER, $is_autochanger);
+	}
+
+	/**
+	 * Set storage address.
+	 *
+	 * @return none;
+	 */
+	public function setStorageAddress($address) {
+		$this->setViewState(self::STORAGE_ADDRESS, $address);
+	}
+
+	/**
+	 * Get storage address.
+	 *
+	 * @return string address
+	 */
+	public function getStorageAddress() {
+		return $this->getViewState(self::STORAGE_ADDRESS);
 	}
 }
 ?>

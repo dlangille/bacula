@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -87,7 +87,7 @@ abstract class OAuth2 extends CommonModule {
 	 * Temportary set to 15 minutes for testst purposes.
 	 * In production the value SHOULD BE changed.
 	 */
-	const ACCESS_TOKEN_EXPIRES_TIME = 90000;
+	const ACCESS_TOKEN_EXPIRES_TIME = 120;
 
 	/**
 	 * Scope pattern.

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -43,6 +43,9 @@ abstract class DirectiveControlTemplate extends TTemplateControl {
 			if (method_exists($this->getPage()->PostBackEventTarget, 'getCommandParameter')) {
 				$command_param = $this->getPage()->PostBackEventTarget->getCommandParameter();
 			}
+		}
+		if (is_array($command_param) && count($command_param) > 0) {
+			$command_param = $command_param[0];
 		}
 		return $command_param;
 	}

@@ -11,23 +11,22 @@
 		<button type="button" class="w3-button w3-green" onclick="document.location.href='<%=$this->Service->constructUrl('ScheduleStatusList')%>';"><i class="fa fa-clock"></i> &nbsp;<%[ Schedule status ]%></button>
 	</div>
 	<div class="w3-container">
-			<table id="schedule_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom">
-				<thead>
-					<tr>
-						<th></th>
-						<th><%[ Name ]%></th>
-						<th class="w3-center"><%[ Actions ]%></th>
-					</tr>
-				</thead>
-				<tbody id="schedule_list_body"></tbody>
-				<tfoot>
-					<tr>
-						<th></th>
-						<th><%[ Name ]%></th>
-						<th class="w3-center"><%[ Actions ]%></th>
-					</tr>
-				</tfoot>
-			</table>
+		<table id="schedule_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom">
+			<thead>
+				<tr>
+					<th></th>
+					<th><%[ Name ]%></th>
+					<th class="w3-center"><%[ Actions ]%></th>
+				</tr>
+			</thead>
+			<tbody id="schedule_list_body"></tbody>
+			<tfoot>
+				<tr>
+					<th></th>
+					<th><%[ Name ]%></th>
+					<th class="w3-center"><%[ Actions ]%></th>
+				</tr>
+			</tfoot>
 		</table>
 	</div>
 <script type="text/javascript">
