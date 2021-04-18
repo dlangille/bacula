@@ -242,6 +242,16 @@
 					"type": "string",
 					"enum": ["raw", "json"]
 				}
+			},
+			"DeviceName": {
+				"name": "device_name",
+				"in": "path",
+				"description": "Autochanger tape drive device name",
+				"required": true,
+				"schema": {
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				}
 			}
 		}
 	},
@@ -4422,6 +4432,503 @@
 				]
 			}
 		},
+		"/api/v2/devices/{device_name}/load": {
+			"get": {
+				"tags": ["devices"],
+				"summary": "Get autochanger tape drive load output",
+				"description": "Get autochanger tape drive load output by output identifier",
+				"responses": {
+					"200": {
+						"description": "Load autochanger tape drive output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Load tape drive output."
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					"$ref": "#/components/parameters/DeviceName",
+					{
+						"name": "out_id",
+						"in": "query",
+						"description": "Output identifier acquired during load drive start.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9]+"
+						}
+					}
+				]
+			},
+			"put": {
+				"tags": ["devices"],
+				"summary": "Load device",
+				"description": "Load autochanger tape drive device.",
+				"consumes": [ "application/json" ],
+				"responses": {
+					"200": {
+						"description": "Load autochanger tape drive.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "JSON string with output identifier"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 130, 131, 132, 133, 134, 135, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					"$ref": "#/components/parameters/DeviceName",
+					{
+						"name": "drive",
+						"in": "query",
+						"description": "Drive name",
+						"required":  true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "slot",
+						"in": "query",
+						"description": "Slot number",
+						"required":  true,
+						"schema": {
+							"type": "integer",
+							"minimum": 1
+						}
+					}
+				]
+			}
+		},
+		"/api/v2/devices/{device_name}/unload": {
+			"get": {
+				"tags": ["devices"],
+				"summary": "Get autochanger tape drive unload output",
+				"description": "Get autochanger tape drive unload output by output identifier",
+				"responses": {
+					"200": {
+						"description": "Unload autochanger tape drive output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Unload tape drive output."
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					"$ref": "#/components/parameters/DeviceName",
+					{
+						"name": "out_id",
+						"in": "query",
+						"description": "Output identifier acquired during unload drive start.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9]+"
+						}
+					}
+				]
+			},
+			"put": {
+				"tags": ["devices"],
+				"summary": "Unload device",
+				"description": "Unload autochanger tape drive device.",
+				"consumes": [ "application/json" ],
+				"responses": {
+					"200": {
+						"description": "Unload autochanger tape drive.",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "JSON string with output identifier"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 130, 131, 132, 133, 134, 135, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					"$ref": "#/components/parameters/DeviceName",
+					{
+						"name": "drive",
+						"in": "query",
+						"description": "Drive name",
+						"required":  true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "slot",
+						"in": "query",
+						"description": "Slot number",
+						"required":  true,
+						"schema": {
+							"type": "integer",
+							"minimum": 1
+						}
+					}
+				]
+			}
+		},
+		"/api/v2/devices/{device_name}/loaded": {
+			"get": {
+				"tags": ["devices"],
+				"summary": "Get loaded slot in given tape drive",
+				"description": "Get loaded slot in given autochanger tape drive",
+				"responses": {
+					"200": {
+						"description": "Autochanger slot number",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Loaded slot number."
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 130, 131, 132, 133, 135, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					"$ref": "#/components/parameters/DeviceName",
+					{
+						"name": "drive",
+						"in": "query",
+						"description": "Drive name",
+						"required":  true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					}
+				]
+			}
+		},
+		"/api/v2/devices/{device_name}/list": {
+			"get": {
+				"tags": ["devices"],
+				"summary": "List autochanger volume names (requires barcode reader)",
+				"description": "List autochanger volume names (requires barcode reader)",
+				"responses": {
+					"200": {
+						"description": "List autochanger volume names",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"slot": {
+														"type": "string",
+														"description": "Slot number"
+													},
+													"volume": {
+														"type": "string",
+														"description": "Volume name from barcode"
+													}
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 130, 131, 132, 133, 135, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					"$ref": "#/components/parameters/DeviceName"
+				]
+			}
+		},
+		"/api/v2/devices/{device_name}/listall": {
+			"get": {
+				"tags": ["devices"],
+				"summary": "List all autochanger slots and drives",
+				"description": "List all autochanger slots and drives",
+				"responses": {
+					"200": {
+						"description": "All autochanger slots and drives",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "object",
+											"properties": {
+												"drives": {
+													"type": "array",
+													"description": "Tape drive list",
+													"items": {
+														"$ref": "#/components/parameters/AutochangerDriveVolume"
+													}
+												},
+												"slots": {
+													"type": "array",
+													"description": "Regular slot list",
+													"items": {
+														"$ref": "#/components/parameters/AutochangerSlotVolume"
+													}
+												},
+												"ie_slots": {
+													"type": "array",
+													"description": "Import/export slot list",
+													"items": {
+														"$ref": "#/components/parameters/AutochangerSlotVolume"
+													}
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 130, 131, 132, 133, 135, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					"$ref": "#/components/parameters/DeviceName"
+				]
+			}
+		},
+		"/api/v2/devices/{device_name}/slots": {
+			"get": {
+				"tags": ["devices"],
+				"summary": "Get how many slots has autochanger",
+				"description": "Get how many slots has autochanger",
+				"responses": {
+					"200": {
+						"description": "Autochanger slot count",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "object",
+											"properties": {
+												"slots": {
+													"type": "string",
+													"description": "Autochanger slots count"
+												}
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 130, 131, 132, 133, 135, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					"$ref": "#/components/parameters/DeviceName"
+				]
+			}
+		},
+		"/api/v2/devices/{device_name}/transfer": {
+			"get": {
+				"tags": ["devices"],
+				"summary": "Get output from transfering tape from source slot to destination slot",
+				"description": "Get output from ransfering tape from source slot to destination slot",
+				"responses": {
+					"200": {
+						"description": "Output from transfering autochanger tape from source slot to destination slot",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Transfer tape output."
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					"$ref": "#/components/parameters/DeviceName",
+					{
+						"name": "out_id",
+						"in": "query",
+						"description": "Output identifier acquired during transfer tape start.",
+						"required": true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9]+"
+						}
+					}
+				]
+			},
+			"put": {
+				"tags": ["devices"],
+				"summary": "Transfer tape from source slot to destination slot",
+				"description": "Transfer tape from source slot to destination slot",
+				"consumes": [ "application/json" ],
+				"responses": {
+					"200": {
+						"description": "Transfer tape from source slot to destination slot",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "JSON string with output identifier"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 130, 131, 132, 133, 134, 135, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					"$ref": "#/components/parameters/DeviceName",
+					{
+						"name": "drive",
+						"in": "query",
+						"description": "Drive name",
+						"required":  true,
+						"schema": {
+							"type": "string",
+							"pattern": "[a-zA-Z0-9:.-_ ]+"
+						}
+					},
+					{
+						"name": "slotsrc",
+						"in": "query",
+						"description": "Source slot number",
+						"required":  true,
+						"schema": {
+							"type": "integer",
+							"minimum": 1
+						}
+					},
+					{
+						"name": "destsrc",
+						"in": "query",
+						"description": "Destination slot number",
+						"required":  true,
+						"schema": {
+							"type": "integer",
+							"minimum": 1
+						}
+					}
+				]
+			}
+		},
 		"/api/v2/joblog/{jobid}": {
 			"get": {
 				"tags": ["joblog"],
@@ -5755,6 +6262,128 @@
 				"name": {
 					"description": "OAuth2 client name (optional)",
 					"type": "string"
+				}
+			}
+		},
+		"AutochangerDriveVolume": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"description": "Element type (slot, ie_slot or drive)",
+					"type": "string"
+				},
+				"index": {
+					"description": "Drive index",
+					"type": "integer"
+				},
+				"drive": {
+					"description": "Drive name",
+					"type": "string"
+				},
+				"device": {
+					"description": "Device path (ex. /dev/tape/by-id/scsi-XYZZY_48-nst)",
+					"type": "string"
+				},
+				"slot_ach": {
+					"description": "Slot in autochanger",
+					"type": "integer"
+				},
+				"state": {
+					"description": "Element state: E - empty, F - full",
+					"type": "string",
+					"enum": ["E", "F"]
+				},
+				"mediaid": {
+					"description": "Media identifier",
+					"type": "integer"
+				},
+				"volume": {
+					"description": "Volume name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				},
+				"mediatype": {
+					"description": "Media type",
+					"type": "string"
+				},
+				"pool": {
+					"description": "Pool name",
+					"type": "string"
+				},
+				"lastwritten": {
+					"description": "Date and time last write to volume",
+					"type": "string"
+				},
+				"whenexpire": {
+					"description": "Expiration date and time",
+					"type": "string"
+				},
+				"volbytes": {
+					"description": "Number of bytes written on volume",
+					"type": "integer"
+				},
+				"volstatus": {
+					"description": "Volume status",
+					"type": "integer"
+				},
+				"slot_cat": {
+					"description": "Slot in the Catalog database",
+					"type": "integer"
+				}
+			}
+		},
+		"AutochangerSlotVolume": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"description": "Element type (slot, ie_slot or drive)",
+					"type": "string"
+				},
+				"slot_ach": {
+					"description": "Slot in autochanger",
+					"type": "integer"
+				},
+				"state": {
+					"description": "Element state: E - empty, F - full",
+					"type": "string",
+					"enum": ["E", "F"]
+				},
+				"mediaid": {
+					"description": "Media identifier",
+					"type": "integer"
+				},
+				"volume": {
+					"description": "Volume name",
+					"type": "string",
+					"pattern": "[a-zA-Z0-9:.-_ ]+"
+				},
+				"mediatype": {
+					"description": "Media type",
+					"type": "string"
+				},
+				"pool": {
+					"description": "Pool name",
+					"type": "string"
+				},
+				"lastwritten": {
+					"description": "Date and time last write to volume",
+					"type": "string"
+				},
+				"whenexpire": {
+					"description": "Expiration date and time",
+					"type": "string"
+				},
+				"volbytes": {
+					"description": "Number of bytes written on volume",
+					"type": "integer"
+				},
+				"volstatus": {
+					"description": "Volume status",
+					"type": "integer"
+				},
+				"slot_cat": {
+					"description": "Slot in the Catalog database",
+					"type": "integer"
 				}
 			}
 		}
