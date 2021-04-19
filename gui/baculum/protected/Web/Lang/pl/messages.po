@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-07 04:36\n"
+"PO-Revision-Date: 2021-04-19 03:16\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Marcin Haba <marcin.haba@bacula.pl>\n"
@@ -3325,16 +3325,16 @@ msgid "FD port"
 msgstr "Port FD"
 
 msgid "FD API host"
-msgstr "Host API FD"
+msgstr "Host FD API"
 
 msgid "Configure file daemon"
-msgstr "Konfiguruj file daemon"
+msgstr "Skonfiguruj file daemon"
 
 msgid "There was a problem with loading the resource configuration. Please check if selected API host is working and if it provides access to the resource configuration."
-msgstr "Wystąpił problem z załadowaniem konfiguracji zasobu. Proszę sprawdzić czy wybrany host API działa i czy dostarcza dostęp do konfiguracji tego zasobu."
+msgstr "Wystąpił problem podczas ładowania konfiguracji zasobów. Sprawdź, czy wybrany host API działa i czy zapewnia dostęp do konfiguracji zasobów."
 
 msgid "SD API host"
-msgstr "Host API SD"
+msgstr "Host SD API"
 
 msgid "SD address"
 msgstr "Adres SD"
@@ -3343,4 +3343,5 @@ msgid "SD port"
 msgstr "Port SD"
 
 msgid "Configure storage daemon"
-msgstr "Konfiguruj storage daemon"
+msgstr "Skonfiguruj storage daemon"
+
