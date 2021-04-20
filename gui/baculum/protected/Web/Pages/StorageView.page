@@ -55,7 +55,7 @@
 			ClientSide.OnFailure="$('#status_storage_loading').hide();status_storage_show_error(parameter);"
 			Attributes.onclick="hide_first_tab_containers(event);"
 		>
-			<prop:Text><%=Prado::localize('Status storage')%> &nbsp;<i class="fa fa-file-medical-alt"></i></prop:Text>
+			<prop:Text><i class="fa fa-file-medical-alt"></i> &nbsp;<%=Prado::localize('Status storage')%></prop:Text>
 		</com:TActiveLinkButton>
 		<com:TActiveLinkButton
 			ID="Mount"
@@ -65,7 +65,7 @@
 			CausesValidation="true"
 			ClientSide.OnLoading="oStorageActions.show_loader(true);"
 		>
-			<prop:Text><%=Prado::localize('Mount')%> &nbsp;<i class="fa fa-caret-down"></i></prop:Text>
+			<prop:Text><i class="fa fa-caret-down"></i> &nbsp;<%=Prado::localize('Mount')%></prop:Text>
 		</com:TActiveLinkButton>
 		<com:TActiveLinkButton
 			ID="Release"
@@ -75,7 +75,7 @@
 			CausesValidation="true"
 			ClientSide.OnLoading="oStorageActions.show_loader(true);"
 		>
-			<prop:Text><%=Prado::localize('Release')%> &nbsp;<i class="fa fa-caret-right"></i></prop:Text>
+			<prop:Text><i class="fa fa-caret-right"></i> &nbsp;<%=Prado::localize('Release')%></prop:Text>
 		</com:TActiveLinkButton>
 		<com:TActiveLinkButton
 			ID="Umount"
@@ -85,8 +85,12 @@
 			CausesValidation="true"
 			ClientSide.OnLoading="oStorageActions.show_loader(true);"
 		>
-			<prop:Text><%=Prado::localize('Umount')%> &nbsp;<i class="fa fa-caret-up"></i></prop:Text>
+			<prop:Text><i class="fa fa-caret-up"></i> &nbsp;<%=Prado::localize('Umount')%></prop:Text>
 		</com:TActiveLinkButton>
+		<com:Application.Web.Portlets.ComponentActionsMenu
+			ID="CompActions"
+			BigButtons="true"
+		/>
 		<com:TCallback ID="MountLoading" OnCallback="mountLoading" />
 		<com:TCallback ID="ReleaseLoading" OnCallback="releaseLoading" />
 		<com:TCallback ID="UmountLoading" OnCallback="umountLoading" />

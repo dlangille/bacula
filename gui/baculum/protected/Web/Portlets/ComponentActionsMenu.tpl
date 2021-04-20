@@ -1,4 +1,6 @@
-<a href="javascript:void(0);" onmousedown="openElementOnCursor(event, '<%=$this->ClientID%>_component_actions', -80, 20);"><i class="fas fa-ellipsis-v fa-lg"></i></a>
+<a href="javascript:void(0);" onmousedown="openElementOnCursor(event, '<%=$this->ClientID%>_component_actions', -80, 20);" style="display: <%=$this->BigButtons ? 'none' : 'inline'%>">
+	<i class="fas fa-ellipsis-v fa-lg"></i>
+</a>
 <div id="<%=$this->ClientID%>_component_actions" class="w3-card w3-white w3-padding left" style="display: none">
 	<i class="fa fa-times w3-right" onclick="$('#<%=$this->ClientID%>_component_actions').hide();" style="cursor: pointer"></i>
 	<ul class="w3-ul new_element_menu">
@@ -28,6 +30,36 @@
 		</li>
 	</ul>
 </div>
+<span id="<%=$this->ClientID%>_big_buttons_component_actions" style="display: <%=$this->BigButtons ? 'inline' : 'none'%>">
+	<com:TActiveLinkButton
+		OnCommand="componentAction"
+		CommandParameter="start"
+		CssClass="w3-button w3-green w3-margin-bottom"
+		ClientSide.OnLoading="$('#<%=$this->ClientID%>_loader_component_actions').show();"
+		ClientSide.OnComplete="$('#<%=$this->ClientID%>_loader_component_actions').hide();"
+		>
+		<i class='fas fa-play'></i> &nbsp;<%[ Start ]%>
+	</com:TActiveLinkButton>
+	<com:TActiveLinkButton
+		OnCommand="componentAction"
+		CommandParameter="stop"
+		CssClass="w3-button w3-green w3-margin-bottom"
+		ClientSide.OnLoading="$('#<%=$this->ClientID%>_loader_component_actions').show();"
+		ClientSide.OnComplete="$('#<%=$this->ClientID%>_loader_component_actions').hide();"
+		>
+		<i class='fas fa-stop'></i> &nbsp;<%[ Stop ]%>
+	</com:TActiveLinkButton>
+	<com:TActiveLinkButton
+		OnCommand="componentAction"
+		CommandParameter="restart"
+		CssClass="w3-button w3-green w3-margin-bottom"
+		ClientSide.OnLoading="$('#<%=$this->ClientID%>_loader_component_actions').show();"
+		ClientSide.OnComplete="$('#<%=$this->ClientID%>_loader_component_actions').hide();"
+		>
+		<i class='fas fa-sync'></i> &nbsp;<%[ Restart ]%>
+	</com:TActiveLinkButton>
+	<i id="<%=$this->ClientID%>_loader_component_actions" class="fa fa-sync fa-spin" style="vertical-align: super;display: none;"></i>
+</span>
 <div id="<%=$this->ClientID%>_component_action_message_box" class="w3-modal" style="display: none">
 	<div class="w3-modal-content w3-card-4 w3-animate-zoom" style="width:600px">
 		<header class="w3-container w3-red marked">

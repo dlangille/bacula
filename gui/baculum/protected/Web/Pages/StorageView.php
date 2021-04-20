@@ -99,6 +99,13 @@ class StorageView extends BaculumWebPage {
 			}
 		}
 		$this->setAPIHosts();
+
+		// Set component actions
+		$sd_api_host = $this->getSDAPIHost();
+		if ($sd_api_host) {
+			$this->CompActions->setHost($sd_api_host);
+			$this->CompActions->setComponentType('sd');
+		}
 	}
 
 	private function setAPIHosts() {

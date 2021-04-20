@@ -103,6 +103,13 @@ class ClientView extends BaculumWebPage {
 			}
 		}
 		$this->setAPIHosts();
+
+		// Set component actions
+		$fd_api_host = $this->getFDAPIHost();
+		if ($fd_api_host) {
+			$this->CompActions->setHost($fd_api_host);
+			$this->CompActions->setComponentType('fd');
+		}
 	}
 
 	public function setDIRClientConfig($sender, $param) {
@@ -137,6 +144,15 @@ class ClientView extends BaculumWebPage {
 			$this->UserAPIHostsContainter->Visible = false;
 		}
 	}
+
+	private function getFDAPIHost() {
+		if (!$this->User->isUserAPIHost($this->UserAPIHosts->SelectedValue)) {
+			// Validation error. Somebody manually modified select values
+			return false;
+		}
+		return $this->UserAPIHosts->SelectedValue;
+	}
+
 
 	private function getFDName() {
 		$fdname = null;
