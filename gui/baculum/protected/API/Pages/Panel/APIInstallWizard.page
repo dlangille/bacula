@@ -487,6 +487,7 @@
 								ID="BConfigDir"
 								CssClass="w3-input w3-border w3-show-inline-block"
 								Width="370px"
+								Attributes.placeholder="ex. /etc/baculum/Config-api-apache"
 							/> &nbsp;
 							<span class="config_test_loader" style="display: none">
 								<i class="fas fa-sync fa-spin" title="<%[ Loading... ]%>"></i>
