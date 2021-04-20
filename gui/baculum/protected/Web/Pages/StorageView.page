@@ -31,7 +31,7 @@
 			<%[ SD API host ]%>
 			<com:TActiveDropDownList
 				ID="UserAPIHosts"
-				CssClass="w3-select w3-border"
+				CssClass="w3-select"
 				Width="200px"
 			/>
 		</com:TLabel>
