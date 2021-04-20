@@ -14,10 +14,21 @@
 				ToolTip="<%[ Logout ]%>"
 			>
 				<prop:ClientSide.OnComplete>
-					if (!window.chrome || window.navigator.webdriver)  {
+					if (!window.chrome && window.navigator.userAgent.indexOf('Safari') != -1) {
+						// Safari
+						var xml_http = new XMLHttpRequest();
+						xml_http.open('POST', main_side_bar_reload_url, true, '<%=$this->User->getUsername()%>');
+						xml_http.onreadystatechange = function() {
+							if (this.readyState == 4 && this.status == 200) {
+								window.location.reload();
+							}
+						}
+						xml_http.send();
+					} else if (!window.chrome || window.navigator.webdriver)  {
+						// Firefox and others
 						window.location.href = main_side_bar_reload_url;
 					} else if (window.chrome) {
-						// For chrome this reload is required to show login Basic auth prompt
+						// Chrome
 						window.location.reload();
 					}
 				</prop:ClientSide.OnComplete>
