@@ -1,3 +1,25 @@
+                Release Notes for Baculum 11.0.2.2
+
+This is a minor new feature and bug fix release. The main new feature for
+this version is support for assigning multiple API hosts to one user.
+Portuguese and Polish translations have been updated as well.
+
+New changes and fixes:
+
+ - Implement support for assigning multiple API hosts to one user
+ - Add capability to manage many API hosts by one user account
+ - Add component action (start/stop/restart) buttons to client and storage pages
+ - Update Portuguese translations
+ - Update Polish translations
+ - Fix #2609 opening update slots window reported by Hector Barrera
+ - Fix #2592 logout button on Safari web browser
+ - Add new device interface definition to Baculum OpenAPI documentation
+ - Use catalog access in changer listall endpoint only if it is configured on API host
+
+Bugs fixed/closed since last release:
+2592, 2609
+
+
                Release Notes for Baculum 11.0.2.1
 
 This is a minor new feature release. It provides the autochanger management
@@ -9,6 +31,7 @@ New changes:
  - Update Russian translations
  - Update Portuguese translations
  - Update Polish translations
+
 
                Release Notes for Baculum 11.0.1.1
 
@@ -31,6 +54,7 @@ New changes and fixes:
 
 Bugs fixed/closed since last release:
 2597
+
 
                Release Notes for Baculum 9.6.6.3
 
