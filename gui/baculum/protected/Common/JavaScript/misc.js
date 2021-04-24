@@ -26,8 +26,9 @@ var Cookies = {
 }
 
 var W3TabsCommon = {
-	open: function(btn_id, item_id) {
-		var tab_items = document.getElementsByClassName(this.css.tab_item);
+	open: function(btn_id, item_id, item_container_id) {
+		var root = document.getElementById(item_container_id) || document;
+		var tab_items = root.getElementsByClassName(this.css.tab_item);
 		for (var i = 0; i < tab_items.length; i++) {
 			if (tab_items[i].id === item_id) {
 				tab_items[i].style.display = 'block';
@@ -35,7 +36,7 @@ var W3TabsCommon = {
 				tab_items[i].style.display = 'none';
 			}
 		}
-		var tab_btns = document.getElementsByClassName(this.css.tab_btn);
+		var tab_btns = root.getElementsByClassName(this.css.tab_btn);
 		for (var i = 0; i < tab_btns.length; i++) {
 			if (tab_btns[i].id === btn_id && !tab_btns[i].classList.contains(this.css.tab_item_hover)) {
 				tab_btns[i].classList.add(this.css.tab_item_hover);
@@ -70,8 +71,8 @@ var W3SubTabs = {
 		tab_item: 'subtab_item',
 		tab_item_hover: 'w3-border-red'
 	},
-	open: function(btn_id, item_id) {
-		W3TabsCommon.open.call(this, btn_id, item_id);
+	open: function(btn_id, item_id, item_container_id) {
+		W3TabsCommon.open.call(this, btn_id, item_id, item_container_id);
 	}
 };
 

@@ -226,10 +226,10 @@ var oStorageActions = {
 			</div>
 			<div class="w3-panel w3-card w3-light-grey" style="padding-bottom: 16px;">
 				<div class="w3-row">
-					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_storage_subtab_graphical', 'status_storage_graphical_output');">
+					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_storage_subtab_graphical', 'status_storage_graphical_output', 'status_storage_container');">
 						<div id="status_storage_subtab_graphical" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-border-red w3-padding"><%[ Graphical status ]%></div>
 					 </a>
-					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_storage_subtab_text', 'status_storage_text_output');">
+					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_storage_subtab_text', 'status_storage_text_output', 'status_storage_container');">
 						<div id="status_storage_subtab_text" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-padding"><%[ Raw status ]%></div>
 					</a>
 				</div>
@@ -1568,7 +1568,7 @@ var oGraphicalStorageStatus = {
 		} else if (not_supported.style.display == 'none') {
 			not_supported.style.display = '';
 			graphical_container.style.display = 'none';
-			W3SubTabs.open('status_storage_subtab_text', 'status_storage_text_output');
+			W3SubTabs.open('status_storage_subtab_text', 'status_storage_text_output', 'status_storage_container');
 		}
 		return supported;
 	},
@@ -1662,25 +1662,25 @@ function load_sd_res_config(resource) {
 }
 		</script>
 		<div class="w3-row w3-margin-bottom">
-			<a href="javascript:void(0)" onclick="load_sd_storagedaemon_config(); W3SubTabs.open('sd_storagedaemon_config_btn', 'sd_storagedaemon_config_form');">
+			<a href="javascript:void(0)" onclick="load_sd_storagedaemon_config(); W3SubTabs.open('sd_storagedaemon_config_btn', 'sd_storagedaemon_config_form', 'configure_storage_daemon');">
 				<div id="sd_storagedaemon_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding w3-border-red">Storage</div>
 			 </a>
-			<a href="javascript:void(0)" onclick="load_sd_res_config('Director'); W3SubTabs.open('storagedaemon_director_config_btn', 'sd_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Director'); W3SubTabs.open('storagedaemon_director_config_btn', 'sd_resources_config_form', 'configure_storage_daemon');">
 				<div id="storagedaemon_director_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Director</div>
 			</a>
-			<a href="javascript:void(0)" onclick="load_sd_res_config('Device'); W3SubTabs.open('storagedaemon_device_config_btn', 'sd_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Device'); W3SubTabs.open('storagedaemon_device_config_btn', 'sd_resources_config_form', 'configure_storage_daemon');">
 				<div id="storagedaemon_device_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Device</div>
 			</a>
-			<a href="javascript:void(0)" onclick="load_sd_res_config('Autochanger'); W3SubTabs.open('storagedaemon_autochanger_config_btn', 'sd_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Autochanger'); W3SubTabs.open('storagedaemon_autochanger_config_btn', 'sd_resources_config_form', 'configure_storage_daemon');">
 				<div id="storagedaemon_autochanger_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Autochanger</div>
 			</a>
-			<a href="javascript:void(0)" onclick="load_sd_res_config('Messages'); W3SubTabs.open('storagedaemon_messages_config_btn', 'sd_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Messages'); W3SubTabs.open('storagedaemon_messages_config_btn', 'sd_resources_config_form', 'configure_storage_daemon');">
 				<div id="storagedaemon_messages_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Messages</div>
 			</a>
-			<a href="javascript:void(0)" onclick="load_sd_res_config('Cloud'); W3SubTabs.open('storagedaemon_cloud_config_btn', 'sd_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Cloud'); W3SubTabs.open('storagedaemon_cloud_config_btn', 'sd_resources_config_form', 'configure_storage_daemon');">
 				<div id="storagedaemon_cloud_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Cloud</div>
 			</a>
-			<a href="javascript:void(0)" onclick="load_sd_res_config('Statistics'); W3SubTabs.open('storagedaemon_statistics_config_btn', 'sd_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_sd_res_config('Statistics'); W3SubTabs.open('storagedaemon_statistics_config_btn', 'sd_resources_config_form', 'configure_storage_daemon');">
 				<div id="storagedaemon_statistics_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Statistics</div>
 			</a>
 		</div>

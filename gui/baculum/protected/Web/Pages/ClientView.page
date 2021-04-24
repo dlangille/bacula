@@ -95,10 +95,10 @@
 			</div>
 			<div class="w3-panel w3-card w3-light-grey" style="padding-bottom: 16px;">
 				<div class="w3-row">
-					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_client_subtab_graphical', 'status_client_graphical_output');">
+					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_client_subtab_graphical', 'status_client_graphical_output', 'status_client_container');">
 						<div id="status_client_subtab_graphical" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-border-red w3-padding"><%[ Graphical status ]%></div>
 					 </a>
-					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_client_subtab_text', 'status_client_text_output');">
+					<a href="javascript:void(0)" onclick="W3SubTabs.open('status_client_subtab_text', 'status_client_text_output', 'status_client_container');">
 						<div id="status_client_subtab_text" class="subtab_btn w3-half w3-bottombar w3-hover-light-grey w3-padding"><%[ Raw status ]%></div>
 					</a>
 				</div>
@@ -545,7 +545,7 @@ var oGraphicalClientStatus = {
 		} else if (not_supported.style.display == 'none') {
 			not_supported.style.display = '';
 			graphical_container.style.display = 'none';
-			W3SubTabs.open('status_client_subtab_text', 'status_client_text_output');
+			W3SubTabs.open('status_client_subtab_text', 'status_client_text_output', 'status_client_container');
 		}
 		return supported;
 	},
@@ -914,22 +914,22 @@ function load_fd_res_config(resource) {
 }
 		</script>
 		<div class="w3-row w3-margin-bottom">
-			<a href="javascript:void(0)" onclick="load_fd_filedaemon_config('FileDaemon'); W3SubTabs.open('filedaemon_filedaemon_config_btn', 'filedaemon_filedaemon_config_form');">
+			<a href="javascript:void(0)" onclick="load_fd_filedaemon_config('FileDaemon'); W3SubTabs.open('filedaemon_filedaemon_config_btn', 'filedaemon_filedaemon_config_form', 'filedaemon_config');">
 				<div id="filedaemon_filedaemon_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding w3-border-red">File Daemon</div>
 			 </a>
-			<a href="javascript:void(0)" onclick="load_fd_res_config('Director'); W3SubTabs.open('filedaemon_director_config_btn', 'filedaemon_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_fd_res_config('Director'); W3SubTabs.open('filedaemon_director_config_btn', 'filedaemon_resources_config_form', 'filedaemon_config');">
 				<div id="filedaemon_director_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Director</div>
 			</a>
-			<a href="javascript:void(0)" onclick="load_fd_res_config('Messages'); W3SubTabs.open('filedaemon_messages_config_btn', 'filedaemon_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_fd_res_config('Messages'); W3SubTabs.open('filedaemon_messages_config_btn', 'filedaemon_resources_config_form', 'filedaemon_config');">
 				<div id="filedaemon_messages_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Messages</div>
 			</a>
-			<a href="javascript:void(0)" onclick="load_fd_res_config('Schedule'); W3SubTabs.open('filedaemon_schedule_config_btn', 'filedaemon_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_fd_res_config('Schedule'); W3SubTabs.open('filedaemon_schedule_config_btn', 'filedaemon_resources_config_form', 'filedaemon_config');">
 				<div id="filedaemon_schedule_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Schedule</div>
 			</a>
-			<a href="javascript:void(0)" onclick="load_fd_res_config('Console'); W3SubTabs.open('filedaemon_console_config_btn', 'filedaemon_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_fd_res_config('Console'); W3SubTabs.open('filedaemon_console_config_btn', 'filedaemon_resources_config_form', 'filedaemon_config');">
 				<div id="filedaemon_console_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Console</div>
 			</a>
-			<a href="javascript:void(0)" onclick="load_fd_res_config('Statistics'); W3SubTabs.open('filedaemon_statistics_config_btn', 'filedaemon_resources_config_form');">
+			<a href="javascript:void(0)" onclick="load_fd_res_config('Statistics'); W3SubTabs.open('filedaemon_statistics_config_btn', 'filedaemon_resources_config_form', 'filedaemon_config');">
 				<div id="filedaemon_statistics_config_btn" class="subtab_btn w3-col m1 w3-bottombar w3-hover-light-grey w3-padding">Statistics</div>
 			</a>
 		</div>
