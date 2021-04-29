@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-08 16:03\n"
+"PO-Revision-Date: 2021-04-29 18:18\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -2812,7 +2812,7 @@ msgid "Advanced options"
 msgstr "Расширенные настройки"
 
 msgid "Default API hosts for imported users:"
-msgstr "Default API hosts for imported users:"
+msgstr "Хосты API по умолчанию для импортируемых пользователей:"
 
 msgid "Log in"
 msgstr "Вход"
@@ -3313,34 +3313,35 @@ msgid "Mount volume"
 msgstr "Монтировать том"
 
 msgid "API hosts:"
-msgstr "API hosts:"
+msgstr "Хосты API:"
 
 msgid "Please select API host"
-msgstr "Please select API host"
+msgstr "Пожалуйста, выберите хост API"
 
 msgid "FD address"
-msgstr "FD address"
+msgstr "Адрес FD"
 
 msgid "FD port"
-msgstr "FD port"
+msgstr "Порт FD"
 
 msgid "FD API host"
-msgstr "FD API host"
+msgstr "Хост FD API"
 
 msgid "Configure file daemon"
-msgstr "Configure file daemon"
+msgstr "Настроить файловый демон"
 
 msgid "There was a problem with loading the resource configuration. Please check if selected API host is working and if it provides access to the resource configuration."
-msgstr "There was a problem with loading the resource configuration. Please check if selected API host is working and if it provides access to the resource configuration."
+msgstr "Возникла проблема при загрузке конфигурации ресурса. Пожалуйста, проверьте, работает ли выбранный хост API и обеспечивает ли он доступ к конфигурации ресурса."
 
 msgid "SD API host"
-msgstr "SD API host"
+msgstr "Хост SD API"
 
 msgid "SD address"
-msgstr "SD address"
+msgstr "Адрес SD"
 
 msgid "SD port"
-msgstr "SD port"
+msgstr "Порт SD"
 
 msgid "Configure storage daemon"
-msgstr "Configure storage daemon"
+msgstr "Настроить демон хранения"
+
