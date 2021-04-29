@@ -105,6 +105,6 @@ function sortFilesListByName($a, $b) {
 	} else if ($firstRight == '.' && $firstLeft != '.') {
 		return 1;
 	}
-	return strcasecmp($a['name'], $b['name']);
+	return strcmp($a['name'], $b['name']);
 }
 ?>

@@ -13,6 +13,17 @@
 	background-color: white;
 }
 
+#restore-browser-files {
+	height: calc(100% - 57px) !important;
+}
+
+@media (max-width: 600px) {
+	#restore-browser-files {
+		/* On small devices bottom toolbar with search, offset and limit is not displayed */
+		height: 100% !important;
+	}
+}
+
 #restore-browser-files-loading {
 	position: absolute;
 	z-index: 10;

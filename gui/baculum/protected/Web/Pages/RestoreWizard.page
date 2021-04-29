@@ -213,7 +213,7 @@
 	</prop:ClientSide.OnLoading>
 	<prop:ClientSide.OnComplete>
 		oJobsToRestoreList.show_find_job_by_filename_loader(false);
-		<%=$this->Session->contains('restore_jobid') ? 'oJobsToRestoreList.set_jobid(' . $this->Session['restore_jobid'] . ');' : ''%>
+		<%=$this->Session->contains('restore_job') ? 'oJobsToRestoreList.set_jobid(' . $this->Session['restore_job']['jobid'] . ');' : ''%>
 	</prop:ClientSide.OnComplete>
 </com:TCallback>
 <script type="text/javascript">
@@ -463,9 +463,9 @@ var oJobsToRestoreList = {
 							var radio = document.createElement('INPUT');
 							radio.type = 'radio';
 							radio.name = 'backup_to_restore';
-							radio.value = data;
+							radio.value = [data, row.name, row.type, row.endtime, row.jobstatus].join('|');
 							radio.className = 'w3-radio';
-							if ('<%=$this->Session->contains('restore_jobid') ? $this->Session['restore_jobid'] : ''%>' == data) {
+							if ('<%=$this->Session->contains('restore_job') ? $this->Session['restore_job']['jobid'] : ''%>' == data) {
 								radio.setAttribute('checked', 'checked');
 							}
 							ret = radio.outerHTML;
@@ -568,28 +568,78 @@ $(function() {
 			<com:TPanel ID="NoFileFound" Style="height: 38px" Display="None">
 					<%[ No file found for selected backup. It can mean file records for this backup are pruned. Restoring selected files is not available but if you continue, there will be performed full restore all backup files. ]%>
 			</com:TPanel>
+			<com:TCallback
+				ID="LoadPath"
+				OnCallback="loadPath"
+			>
+				<prop:ClientSide.OnLoading>
+					document.getElementById('restore-browser-files-loading').style.display = 'block';
+				</prop:ClientSide.OnLoading>
+				<prop:ClientSide.OnComplete>
+					document.getElementById('restore-browser-files-loading').style.display = 'none';
+					make_draggable('restore-browser-files-content');
+				</prop:ClientSide.OnComplete>
+			</com:TCallback>
 			<div class="w3-row">
-				<div class="w3-col" style="width: 15%;"><%[ Path: ]%></div>
+				<div class="w3-col" style="width: 15%; text-align: right; padding: 10px;"><%[ Path: ]%></div>
 				<div class="w3-col" style="width: 85%;">
 					<com:TActiveTextBox
 						ID="PathField"
 						CssClass="w3-input w3-twothird w3-border"
 						Style="display: inline"
-						Attributes.onkeydown="var keycode = (event.keyCode ? event.keyCode : event.which); if (keycode === 13) {$('#<%=$this->LoadPathBtn->ClientID%>').click(); return false; } return true;"
+						Attributes.onkeydown="var keycode = (event.keyCode ? event.keyCode : event.which); if (keycode === 13) {oRestoreBrowserFiles.load_browser_content(); return false; } return true;"
 						/>
-					<com:TActiveLinkButton
-						ID="LoadPathBtn"
-						CssClass="w3-button w3-green"
-						OnClick="loadPath">
-						<prop:ClientSide.OnLoading>
-							document.getElementById('restore-browser-files-loading').style.display = 'block';
-						</prop:ClientSide.OnLoading>
-						<prop:ClientSide.OnComplete>
-							document.getElementById('restore-browser-files-loading').style.display = 'none';
-							make_draggable('restore-browser-files-content');
-						</prop:ClientSide.OnComplete>
+					<button type="button" id="load_path_btn" class="w3-button w3-green" onclick="oRestoreBrowserFiles.load_browser_content();">
 						<i class="fa fa-check"></i> &nbsp;<%[ OK ]%>
-					</com:TActiveLinkButton>
+					</button>
+				</div>
+			</div>
+			<div class="w3-row w3-hide-small w3-small">
+				<span><%[ # Directories: ]%></span>
+				<com:TActiveLabel
+					ID="RestoreBrowserDirCount"
+					CssClass="w3-show-inline-block"
+					Style="min-width: 20px;"
+					Text="0"
+				/>
+				<span><%[ # Files: ]%></span>
+				<com:TActiveLabel
+					ID="RestoreBrowserFileCount"
+					CssClass="w3-show-inline-block"
+					Style="min-width: 20px;"
+					Text="0"
+				/>
+				<div class="w3-right w3-half w3-hide-small" style="text-align: right; margin-top: 5px">
+					<span><%[ Backup client ]%>:</span>
+					<com:TActiveLabel
+						ID="RestoreBrowserClient"
+						CssClass="w3-show-inline-block w3-margin-right"
+						Style="font-weight: bold"
+					/>
+					<span><%[ Job type ]%>:</span>
+					<com:TActiveLabel
+						ID="RestoreBrowserType"
+						CssClass="w3-show-inline-block w3-margin-right"
+						Style="font-weight: bold"
+					/>
+					<span><%[ Job name ]%>:</span>
+					<com:TActiveLabel
+						ID="RestoreBrowserName"
+						CssClass="w3-show-inline-block w3-margin-right"
+						Style="font-weight: bold"
+					/>
+					<span><%[ Status ]%>: </span>
+					<com:TActiveLabel
+						ID="RestoreBrowserStatus"
+						CssClass="w3-show-inline-block w3-margin-right"
+						Style="vertical-align: top"
+					/>
+					<span><%[ Restore time point ]%>:</span>
+					<com:TActiveLabel
+						ID="RestoreBrowserTimePoint"
+						CssClass="w3-show-inline-block"
+						Style="font-weight: bold"
+					/>
 				</div>
 			</div>
 			<table id="restore-browser">
@@ -599,10 +649,38 @@ $(function() {
 						<div id="restore-browser-files" class="w3-border">
 							<div id="restore-browser-files-content"></div>
 						</div>
+						<div id="restore-browser-nav" class="w3-hide-small" style="height: 57px; padding: 8px 0;">
+							<button type="button" class="w3-button w3-dark-grey w3-right" onclick="oRestoreBrowserFiles.next_page();"><%[ Next ]%> &nbsp;<i class="fa fa-arrow-right"></i></button>
+							<button type="button" class="w3-button w3-dark-grey w3-right w3-margin-right" onclick="oRestoreBrowserFiles.prev_page();"><i class="fa fa-arrow-left"></i> &nbsp;<%[ Previous ]%></button>
+							<com:TActiveTextBox
+								ID="RestoreBrowserLimit"
+								CssClass="w3-input w3-border w3-right w3-show-inline-block w3-margin-right"
+								Width="70px"
+								Text="2000"
+							/>
+							<span class="w3-right" style="padding: 8px 2px 8px 8px"><%[ Limit: ]%></span>
+							<com:TActiveTextBox
+								ID="RestoreBrowserOffset"
+								CssClass="w3-input w3-border w3-right w3-show-inline-block"
+								Width="70px"
+								Text="0"
+							/>
+							<span class="w3-right" style="padding: 8px 2px"><%[ Offset: ]%></span>
+							<input type="text" id="restore-browser-search" class="w3-input w3-border w3-show-inline-block" style="width: 170px" placeholder="&#128269; <%[ Search... ]%>" />
+							<input type="checkbox" class="w3-check w3-margin-left" id="restore-browser-search-insensitive" />
+							<label for="restore-browser-search-insensitive" style="padding: 8px 2px"><%[ case sensitive ]%></label>
+						</div>
 <script>
 var oRestoreBrowserFiles = {
 	ids: {
-		content: 'restore-browser-files-content'
+		content: 'restore-browser-files-content',
+		search: 'restore-browser-search',
+		case_sensitive: 'restore-browser-search-insensitive',
+		offset: '<%=$this->RestoreBrowserOffset->ClientID%>',
+		limit: '<%=$this->RestoreBrowserLimit->ClientID%>',
+		type: '<%=$this->RestoreBrowserType->ClientID%>',
+		status: '<%=$this->RestoreBrowserStatus->ClientID%>',
+		time_point: '<%=$this->RestoreBrowserTimePoint->ClientID%>'
 	},
 	cls: {
 		draggable: 'draggable',
@@ -627,7 +705,13 @@ var oRestoreBrowserFiles = {
 	},
 	excluded_items: ['.', '..'],
 	init: function(items) {
+		this.set_events();
 		this.load_items();
+		this.set_browser_headers();
+	},
+	load_browser_content: function() {
+		var cb = <%=$this->LoadPath->ActiveControl->Javascript%>;
+		cb.dispatch();
 	},
 	load_items: function() {
 		var cb = <%=$this->SetBrowserFiles->ActiveControl->Javascript%>;
@@ -670,6 +754,12 @@ var oRestoreBrowserFiles = {
 			if(vposition == null || vposition == '0px'){
 				event.stop();
 			} else {
+				if (item.type === this.types.directory) {
+					var offset = document.getElementById(this.ids.offset);
+					offset.value = 0;
+					var search = document.getElementById(this.ids.search);
+					search.value = '';
+				}
 				var cbp = [item.name, item.pathid, item.filenameid, item.jobid].join('|');
 				var request = <%=$this->getPage()->GetVersions->ActiveControl->Javascript%>;
 				request.setCallbackParameter(cbp);
@@ -728,11 +818,75 @@ var oRestoreBrowserFiles = {
 		div.appendChild(right);
 		container.appendChild(div);
 	},
+	set_events: function() {
+		document.getElementById(this.ids.offset).addEventListener('keypress', function(e) {
+			var kc = event.which || event.keyCode;
+			if (kc === 13) {
+				this.load_browser_content();
+			}
+		}.bind(this));
+		document.getElementById(this.ids.limit).addEventListener('keypress', function(e) {
+			var kc = event.which || event.keyCode;
+			if (kc === 13) {
+				this.load_browser_content();
+			}
+		}.bind(this));
+		var search = document.getElementById(this.ids.search);
+		var case_sensitive = document.getElementById(this.ids.case_sensitive);
+		var search_func = function(e) {
+			var els = document.querySelectorAll('#' + this.ids.content + ' div.' + this.cls.item);
+			var cs = case_sensitive.checked;
+			var txt, regex, regex_opts;
+			for (var i = 0; i < els.length; i++) {
+				txt = els[i].childNodes[1].textContent;
+				if (cs) {
+					regex = new RegExp(search.value);
+				} else {
+					regex = new RegExp(search.value, 'i');
+				}
+				if (regex.test(txt)) {
+					if (els[i].style.display == 'none') {
+						els[i].style.removeProperty('display');
+					}
+				} else {
+					els[i].style.display = 'none';
+				}
+			}
+		}.bind(this);
+		search.addEventListener('keyup', search_func);
+		case_sensitive.addEventListener('click', search_func);
+	},
+	prev_page: function() {
+		var offset = document.getElementById(this.ids.offset);
+		var limit = document.getElementById(this.ids.limit);
+		var new_offset = parseInt(offset.value, 10) - parseInt(limit.value, 10);
+		if (new_offset < 0) {
+			new_offset = 0;
+		}
+		offset.value = new_offset;
+		this.load_browser_content();
+	},
+	next_page: function() {
+		var offset = document.getElementById(this.ids.offset);
+		var limit = document.getElementById(this.ids.limit);
+		var new_offset = parseInt(offset.value, 10) + parseInt(limit.value, 10);
+		offset.value = new_offset;
+		this.load_browser_content();
+	},
 	clear_browser: function() {
 		var container = document.getElementById(this.ids.content);
 		while (container.firstChild) {
 			container.removeChild(container.firstChild);
 		}
+	},
+	set_browser_headers: function() {
+		var type = document.getElementById(this.ids.type);
+		type.textContent = JobType.get_type(type.textContent);
+		var status = document.getElementById(this.ids.status);
+		status.innerHTML = JobStatus.get_icon(status.textContent).outerHTML;
+		var time_point = document.getElementById(this.ids.time_point);
+		var d = date_time_to_ts(time_point.textContent);
+		time_point.textContent = Units.format_date(d);
 	}
 };
 $(function() {
