@@ -505,7 +505,7 @@ bool is_name_valid(const char *name, POOLMEM **msg)
  * Check if Bacula Resoure Name is valid
  */
 /*
- * Check if the Volume name has legal characters
+ * Check if the Volume/resource name has legal characters
  * If ua is non-NULL send the message
  */
 bool is_name_valid(const char *name, POOLMEM **msg, const char *accept)
@@ -539,7 +539,7 @@ bool is_name_valid(const char *name, POOLMEM **msg, const char *accept)
    }
    if (len == 0) {
       if (msg) {
-         Mmsg(msg,  _("Volume name must be at least one character long.\n"));
+         Mmsg(msg,  _("Name must be at least one character long.\n"));
       }
       return false;
    }
