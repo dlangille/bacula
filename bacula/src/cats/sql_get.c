@@ -1477,8 +1477,11 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
       bsnprintf(jobid, sizeof(jobid), "0%u", btemp_cur++);
       V(btemp_mutex);
    } else {
-      edit_uint64(jcr->JobId, jobid);
-      Mmsg(aux, " AND JobId = %s ", jobid);
+      /* TODO: Here we have a hint on the JobId to return
+       * depdending on the Job level of the hint, we must
+       * adapt one of the queries (F, D, I) and add a JobId=x
+       */
+      edit_uint64(from_jobid, jobid);
    }
 
    if (jr->Name[0] != 0) {
