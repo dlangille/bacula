@@ -315,17 +315,17 @@ install-bcloud: bcloud
 
 install-cloud: bacula-sd-cloud-driver.la
 	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_LIB) bacula-sd-cloud-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-driver.la
 
 install-s3-cloud: bacula-sd-cloud-s3-driver.la
 	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-cloud-s3-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_LIB) bacula-sd-cloud-s3-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-cloud-s3-driver.la
 
 install-aligned:  bacula-sd-aligned-driver.la 
 	$(MKDIR) $(DESTDIR)$(plugindir)
-	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bacula-sd-aligned-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
+	$(LIBTOOL_INSTALL) $(INSTALL_LIB) bacula-sd-aligned-driver$(DEFAULT_SHARED_OBJECT_TYPE) $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bacula-sd-aligned-driver.la
 
 uninstall:

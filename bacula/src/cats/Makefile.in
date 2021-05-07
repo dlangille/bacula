@@ -224,21 +224,21 @@ libtool-uninstall:
 install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@
 	for db_type in @DB_BACKENDS@; do \
 	    if [ -f create_$${db_type}_database ]; then \
-	    $(INSTALL_SCRIPT) create_$${db_type}_database $(DESTDIR)$(scriptdir)/create_$${db_type}_database; \
-	    $(INSTALL_SCRIPT) update_$${db_type}_tables $(DESTDIR)$(scriptdir)/update_$${db_type}_tables; \
-	    $(INSTALL_SCRIPT) make_$${db_type}_tables $(DESTDIR)$(scriptdir)/make_$${db_type}_tables; \
-	    $(INSTALL_SCRIPT) grant_$${db_type}_privileges $(DESTDIR)$(scriptdir)/grant_$${db_type}_privileges; \
-	    $(INSTALL_SCRIPT) drop_$${db_type}_tables $(DESTDIR)$(scriptdir)/drop_$${db_type}_tables; \
-	    $(INSTALL_SCRIPT) drop_$${db_type}_database $(DESTDIR)$(scriptdir)/drop_$${db_type}_database; \
+	    $(INSTALL_OSCRIPT) create_$${db_type}_database $(DESTDIR)$(scriptdir)/create_$${db_type}_database; \
+	    $(INSTALL_OSCRIPT) update_$${db_type}_tables $(DESTDIR)$(scriptdir)/update_$${db_type}_tables; \
+	    $(INSTALL_OSCRIPT) make_$${db_type}_tables $(DESTDIR)$(scriptdir)/make_$${db_type}_tables; \
+	    $(INSTALL_OSCRIPT) grant_$${db_type}_privileges $(DESTDIR)$(scriptdir)/grant_$${db_type}_privileges; \
+	    $(INSTALL_OSCRIPT) drop_$${db_type}_tables $(DESTDIR)$(scriptdir)/drop_$${db_type}_tables; \
+	    $(INSTALL_OSCRIPT) drop_$${db_type}_database $(DESTDIR)$(scriptdir)/drop_$${db_type}_database; \
 	    fi; \
 	done
 
-	$(INSTALL_SCRIPT) create_bacula_database $(DESTDIR)$(scriptdir)/create_bacula_database
-	$(INSTALL_SCRIPT) update_bacula_tables $(DESTDIR)$(scriptdir)/update_bacula_tables
-	$(INSTALL_SCRIPT) make_bacula_tables $(DESTDIR)$(scriptdir)/make_bacula_tables
-	$(INSTALL_SCRIPT) grant_bacula_privileges $(DESTDIR)$(scriptdir)/grant_bacula_privileges
-	$(INSTALL_SCRIPT) drop_bacula_tables $(DESTDIR)$(scriptdir)/drop_bacula_tables
-	$(INSTALL_SCRIPT) drop_bacula_database $(DESTDIR)$(scriptdir)/drop_bacula_database
+	$(INSTALL_OSCRIPT) create_bacula_database $(DESTDIR)$(scriptdir)/create_bacula_database
+	$(INSTALL_OSCRIPT) update_bacula_tables $(DESTDIR)$(scriptdir)/update_bacula_tables
+	$(INSTALL_OSCRIPT) make_bacula_tables $(DESTDIR)$(scriptdir)/make_bacula_tables
+	$(INSTALL_OSCRIPT) grant_bacula_privileges $(DESTDIR)$(scriptdir)/grant_bacula_privileges
+	$(INSTALL_OSCRIPT) drop_bacula_tables $(DESTDIR)$(scriptdir)/drop_bacula_tables
+	$(INSTALL_OSCRIPT) drop_bacula_database $(DESTDIR)$(scriptdir)/drop_bacula_database
 
 	@filename=make_catalog_backup.pl; \
 	   if  test -f $(DESTDIR)$(scriptdir)/$$filename; then \
@@ -247,8 +247,8 @@ install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@
 	   else \
 	      destname=$$filename; \
 	   fi; \
-	   echo "$(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname"; \
-	   $(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname
+	   echo "$(INSTALL_OSCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname"; \
+	   $(INSTALL_OSCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname
 	@filename=make_catalog_backup; \
 	   if  test -f $(DESTDIR)$(scriptdir)/$$filename; then \
 	      destname=$$filename.new; \
@@ -256,8 +256,8 @@ install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@
 	   else \
 	      destname=$$filename; \
 	   fi; \
-	   echo "$(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname"; \
-	   $(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname
+	   echo "$(INSTALL_OSCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname"; \
+	   $(INSTALL_OSCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname
 	@filename=delete_catalog_backup; \
 	   if  test -f $(DESTDIR)$(scriptdir)/$$filename; then \
 	      destname=$$filename.new; \
@@ -265,8 +265,8 @@ install: @LIBTOOL_INSTALL_TARGET@ @INCLUDE_INSTALL_TARGET@
 	   else \
 	      destname=$$filename; \
 	   fi; \
-	   echo "$(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname"; \
-	   $(INSTALL_SCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname
+	   echo "$(INSTALL_OSCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname"; \
+	   $(INSTALL_OSCRIPT) $$filename $(DESTDIR)$(scriptdir)/$$destname
 
 uninstall: @LIBTOOL_UNINSTALL_TARGET@ @INCLUDE_UNINSTALL_TARGET@
 	@for db_type in @DB_BACKENDS@; do \
