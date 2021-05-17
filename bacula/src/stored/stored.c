@@ -716,9 +716,10 @@ void *device_initialization(void *arg)
                       (intptr_t)get_first_port_host_order(me->sdaddrs),
                       "Device initialization %s", device->hdr.name);
 
+      /* With USB devices, it might not be here when we start */
       if (device->control_name && stat(device->control_name, &statp) < 0) {
          berrno be;
-         Jmsg2(jcr, M_ERROR_TERM, 0, _("Unable to stat ControlDevice %s: ERR=%s\n"),
+         Jmsg2(jcr, M_ERROR, 0, _("Unable to stat ControlDevice %s: ERR=%s\n"),
             device->control_name, be.bstrerror());
       }
 

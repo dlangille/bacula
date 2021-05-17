@@ -75,9 +75,10 @@ void alert_callback(void *ctx, const char *short_msg, const char *long_msg,
 bool tape_dev::get_tape_alerts(DCR *dcr)
 {
    JCR *jcr = dcr->jcr;
-
-   if (!job_canceled(jcr) && dcr->device->alert_command &&
-       dcr->device->control_name) {
+   if (job_canceled(jcr)) {
+      return false;
+   }
+   if (dcr->device->alert_command && dcr->device->control_name) {
       POOLMEM *alertcmd;
       int status = 1;
       int nalerts = 0;
@@ -85,6 +86,14 @@ bool tape_dev::get_tape_alerts(DCR *dcr)
       ALERT *alert, *rmalert;
       char line[MAXSTRING];
       const char *fmt = "TapeAlert[%d]";
+
+      struct stat statp;
+      if (stat(dcr->device->control_name, &statp) < 0) {
+          berrno be;
+          Jmsg2(jcr, M_ERROR, 0, _("Unable to stat ControlDevice %s: ERR=%s\n"),
+                dcr->device->control_name, be.bstrerror());
+          return false;
+      }
 
       if (!alert_list) {
          alert_list = New(alist(10));
