@@ -288,12 +288,21 @@ good_rtn:
 int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
 {
    BFILE bfd;
-
+   bool do_digest = true;
    Dmsg0(50, "=== digest_file\n");
    binit(&bfd);
 
-   if (ff_pkt->statp.st_size > 0 || ff_pkt->type == FT_RAW
-         || ff_pkt->type == FT_FIFO) {
+   /* On Windows, even an empty file has some data to read and compare like the
+    * security stream, while on linux, the empty file is just empty.
+    */
+#ifndef HAVE_WIN32
+   if (ff_pkt->statp.st_size == 0) {
+      do_digest = false;
+   }
+#endif
+
+   if (do_digest || ff_pkt->type == FT_RAW || ff_pkt->type == FT_FIFO)
+   {
       int noatime = ff_pkt->flags & FO_NOATIME ? O_NOATIME : 0;
       if ((bopen(&bfd, ff_pkt->snap_fname, O_RDONLY | O_BINARY | noatime, 0)) < 0) {
          ff_pkt->ff_errno = errno;
