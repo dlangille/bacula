@@ -154,6 +154,12 @@ if [ "$DBVERSION" -eq 15 -o "$DBVERSION" -eq 16 ]; then
         SKIP1018=1
     fi
 
+# If running on a Galera cluster, YOU MUST BRING THE CLUSTER DOWN TO A
+# SINGLE NODE before performing this migration (and preferably also
+# disable Galera temporarily) because the schema rewrites will almost
+# certainly exceed the hard limits on Galera writeset size (128K maximum
+# rows or 4GB total writeset size, whichever comes first).
+
     if mysql --skip-reconnect $* <<END-OF-DATA
 USE ${db_name};
 
@@ -163,8 +169,9 @@ ALTER TABLE RestoreObject
 ALTER TABLE BaseFiles
    MODIFY FileIndex INTEGER UNSIGNED DEFAULT 0;
 
-DROP INDEX JobId on File;
-DROP INDEX JobId_2 on File;
+DROP INDEX IF EXISTS JobId on File;
+DROP INDEX IF EXISTS JobId_2 on File;
+DROP TABLE IF EXISTS file_temp;
 
 CREATE TABLE file_temp (
    FileId BIGINT UNSIGNED NOT NULL,
@@ -184,10 +191,12 @@ INSERT INTO file_temp (FileId, FileIndex, JobId, PathId, Filename, DeltaSeq,
 	  MarkId, LStat, Md5
     FROM File JOIN Filename USING (FilenameId);
 
+SELECT 'DO NOT BREAK THE SCRIPT AFTER THIS POINT';
+
 DROP TABLE Filename;
 DROP TABLE File;
-
 ALTER TABLE file_temp RENAME TO File;
+
 ALTER TABLE File ADD PRIMARY KEY (FileId);
 ALTER TABLE File MODIFY COLUMN FileId BIGINT UNSIGNED NOT NULL AUTO_INCREMENT;
 CREATE INDEX JobId on File (JobId);
@@ -213,8 +222,10 @@ if [ "$STOP1015" = "" -a "$DBVERSION" -eq 1015 ]; then
     if mysql --skip-reconnect $* <<END-OF-DATA
 USE ${db_name};
 
-DROP INDEX JobId on File;
-DROP INDEX JobId_2 on File;
+DROP INDEX IF EXISTS JobId on File;
+DROP INDEX IF EXISTS JobId_2 on File;
+
+DROP TABLE IF EXISTS file_temp;
 
 CREATE TABLE file_temp (
    FileId BIGINT UNSIGNED NOT NULL,
@@ -233,6 +244,8 @@ INSERT INTO file_temp (FileId, FileIndex, JobId, PathId, Filename, DeltaSeq,
    SELECT FileId, FileIndex, JobId, PathId, Filename.Name, DeltaSeq, 
 	  MarkId, LStat, Md5
     FROM File JOIN Filename USING (FilenameId);
+
+SELECT 'DO NOT BREAK THE SCRIPT AFTER THIS POINT';
 
 DROP TABLE Filename;
 DROP TABLE File;
