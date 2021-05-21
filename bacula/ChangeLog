@@ -1,3 +1,81 @@
+        ChangeLog for Bacula Enterprise version 11.0.3
+
+21May21
+ - Enhance the update_mysql_tables script
+
+19May21
+ - docs: Fix #7657 Enhance the FSType description
+ - docs: Fix #7659 About EnhancedWild fileset directive documentation
+
+17May21
+ - Fix org#2442 About the check of the Control Device during startup
+
+07May21
+ - Fix stored/Makefile.in to install cloud driver object with cloud targets
+ - Fix various default permissions
+
+30Apr21
+ - docs: Fix org#2578 About missing "restore directory=xxx" keyword documentation
+ - Fix org#2605 About incorrect message in restore command
+
+29Apr21
+ - baculum: Update Russian translations
+ - baculum: Restore wizard improvements
+
+24Apr21
+ - baculum: Fix sub-tabs on client and on storage pages
+
+21Apr21
+ - baculum: Add autochanger management section and improve few other texts
+
+20Apr21
+ - baculum: Fix #2592 logout button on Safari web browser
+ - baculum: Add example working directory path in API install wizard
+ - baculum: Add component action (start/stop/restart) buttons to client and 
+  storage pages
+
+19Apr21
+ - baculum: Update documentation chapter and screenshots
+ - baculum: Update Portuguese translations
+
+18Apr21
+ - baculum: Add new device interface definition to Baculum OpenAPI documentation
+ - baculum: Fix double device error code number
+
+17Apr21
+ - baculum: Implement support for assigning multiple API hosts to one user
+ - baculum: Use catalog access in changer listall endpoint only if it is configured 
+  on API host
+
+15Apr21
+ - baculum: Fix opening update slots window reported by Hector Barrera
+
+08Apr21
+ - baculum: Update Russian translations
+
+06Apr21
+ - baculum: Update Portuguese translations
+
+04Apr21
+ - baculum: Implement autochanger management
+
+02Apr21
+ - Fix org#2604 About columns alignment of 'Terminated Jobs' section
+
+31Mar21
+ - docs: Add information about the git branch used with Bacula
+
+30Mar21
+ - Remove unused bsparse tool to avoid compilation error messages
+ - Fix compilation for check_bacula.c reported by Dan
+
+19Feb21
+ - Fix org#2500 .bvfs_get_jobids jobid=X must return X in the list
+ - Check if char **jobid parameter is NULL before to modify it in bvfs_parse_arg_version()
+
+Bugs fixed/closed since last release:
+2442 2500 2578 2592 2604 2605 7657 7659
+
         ChangeLog for Bacula Enterprise version 11.0.2
 
 

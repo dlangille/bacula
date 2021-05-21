@@ -37,6 +37,46 @@ database, be sure to shutdown Bacula and be aware that running the script can
 take some time depending on your database size.
 
 ----------------------------------------------------------------
+Release 11.0.3 21 May 2021
+
+11.0.3 is a minor bug fix release.
+
+ - Check if char **jobid parameter is NULL before modifying it in bvfs_parse_arg_version()
+ - Enhance the update_mysql_tables script
+ - Fix compilation of check_bacula.c reported by Dan
+ - Fix org#2442 About the check of the Control Device during startup
+ - Fix org#2500 .bvfs_get_jobids jobid=X must return X in the list
+ - Fix org#2604 About column alignment of 'Terminated Jobs' section
+ - Fix org#2605 About incorrect messages in restore command
+ - Fix stored/Makefile.in to install cloud driver object with cloud targets
+ - Fix various default permissions
+
+ - baculum: Add autochanger management section and improve few other texts
+ - baculum: Add component action (start/stop/restart) buttons to client and 
+  storage pages
+ - baculum: Add example working directory path in API install wizard
+ - baculum: Add new device interface definition to Baculum OpenAPI documentation
+ - baculum: Fix #2592 logout button on Safari web browser
+ - baculum: Fix double device error code number
+ - baculum: Fix opening update slots window reported by Hector Barrera
+ - baculum: Fix sub-tabs on client and on storage pages
+ - baculum: Implement autochanger management
+ - baculum: Implement support for assigning multiple API hosts to one user
+ - baculum: Restore wizard improvements
+ - baculum: Update Portuguese translations
+ - baculum: Update Russian translations
+ - baculum: Update documentation chapter and screenshots
+ - baculum: Use catalog access in changer listall endpoint only if it is configured on API host
+
+ - docs: Add information about the git branch used with Bacula
+ - docs: Fix #7657 Enhance the FSType description
+ - docs: Fix #7659 About EnhancedWild fileset directive documentation
+ - docs: Fix org#2578 About missing "restore directory=xxx" keyword documentation
+
+Bugs fixed/closed since last release:
+2442 2500 2578 2592 2604 2605 7657 7659
+
+
 Release 11.0.2 26 March 2021
 
 11.0.2 is a minor bug fix release.
