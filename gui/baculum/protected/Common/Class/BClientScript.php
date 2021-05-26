@@ -31,7 +31,7 @@ Prado::using('System.Web.UI.WebControls.TClientScript');
  */
 class BClientScript extends TClientScript {
 
-	const SCRIPTS_VERSION = 19;
+	const SCRIPTS_VERSION = 20;
 
 	public function getScriptUrl()
 	{
