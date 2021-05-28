@@ -1,3 +1,12 @@
+        ChangeLog for Bacula Enterprise version 11.0.4
+
+28May21
+ - baculum: Update script version
+ - Fix org#2618 Disable fix on bvfs_get_jobids() temporarily
+
+Bugs fixed/closed since last release:
+2618
+
         ChangeLog for Bacula Enterprise version 11.0.3
 
 21May21

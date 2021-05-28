@@ -37,6 +37,16 @@ database, be sure to shutdown Bacula and be aware that running the script can
 take some time depending on your database size.
 
 ----------------------------------------------------------------
+Release 11.0.4 28 May 2021
+
+11.0.4 is a minor bug fix release.
+
+ - baculum: Update script version
+ - Fix org#2618 Disable fix on bvfs_get_jobids() temporarily
+
+Bugs fixed/closed since last release:
+2618
+
 Release 11.0.3 21 May 2021
 
 11.0.3 is a minor bug fix release.
