@@ -43,6 +43,7 @@ Release 11.0.4 28 May 2021
 
  - baculum: Update script version
  - Fix org#2618 Disable fix on bvfs_get_jobids() temporarily
+ - Improve MySQL upgrade procedure
 
 Bugs fixed/closed since last release:
 2618

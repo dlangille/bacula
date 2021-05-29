@@ -1,5 +1,8 @@
         ChangeLog for Bacula Enterprise version 11.0.4
 
+29May21
+ - Improve MySQL Dump procedure
+
 28May21
  - baculum: Update script version
  - Fix org#2618 Disable fix on bvfs_get_jobids() temporarily
