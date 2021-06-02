@@ -171,10 +171,14 @@ ALTER TABLE RestoreObject
 ALTER TABLE BaseFiles
    MODIFY FileIndex INTEGER UNSIGNED DEFAULT 0;
 
-DROP INDEX IF EXISTS JobId on File;
-DROP INDEX IF EXISTS JobId_2 on File;
+-- If you re-execute the procedure, you can comment out
+-- these two lines
+DROP INDEX JobId on File;
+DROP INDEX JobId_2 on File;
 
-CREATE TABLE IF NOT EXISTS file_temp (
+DROP TABLE IF EXISTS file_temp;
+
+CREATE TABLE file_temp (
    FileId BIGINT UNSIGNED NOT NULL,
    FileIndex INTEGER DEFAULT 0,
    JobId INTEGER UNSIGNED NOT NULL,
@@ -185,8 +189,6 @@ CREATE TABLE IF NOT EXISTS file_temp (
    LStat TINYBLOB NOT NULL,
    MD5 TINYBLOB
    );
-
-TRUNCATE TABLE file_temp;
 
 INSERT INTO file_temp (FileId, FileIndex, JobId, PathId, Filename, DeltaSeq,
 		       MarkId, LStat, Md5)
@@ -497,7 +499,7 @@ CREATE TABLE Events
     EventsCode        TINYBLOB NOT NULL,
     EventsType        TINYBLOB NOT NULL,
     EventsTime        DATETIME,
-    EventsInsertTime  DATETIME DEFAULT NOW(),
+    EventsInsertTime  DATETIME,
     EventsDaemon        TINYBLOB NOT NULL,
     EventsSource      TINYBLOB NOT NULL,
     EventsRef         TINYBLOB NOT NULL,
