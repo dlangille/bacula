@@ -37,6 +37,18 @@ database, be sure to shutdown Bacula and be aware that running the script can
 take some time depending on your database size.
 
 ----------------------------------------------------------------
+Release 11.0.5 03 June 2021
+
+11.0.5 is a minor bug fix release.
+
+ - Fix compilation
+ - Fix org#2427 About incorrect handling of empty files with Accurate=yes on Windows
+ - Update MySQL update procedure for 5.6
+
+Bugs fixed/closed since last release:
+2427
+
+
 Release 11.0.4 28 May 2021
 
 11.0.4 is a minor bug fix release.

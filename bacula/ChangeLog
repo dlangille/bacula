@@ -1,3 +1,19 @@
+        ChangeLog for Bacula Enterprise version 11.0.5
+
+
+02Jun21
+ - Update MySQL update procedure for 5.6
+
+01Jun21
+ - Fix compilation
+
+17May21
+ - Fix org#2427 About incorrect handling of empty files with Accurate=yes on 
+  Windows
+
+Bugs fixed/closed since last release:
+2427
+
         ChangeLog for Bacula Enterprise version 11.0.4
 
 29May21
