@@ -316,9 +316,15 @@ exit 1
 
 Distribution: %_dist
 
-# should we enable tcp wrappers support
-%define tcpwrappers 1
 %{?build_tcpwrappers:%define tcpwrappers 1}
+
+# should we enable tcp wrappers support
+%if %{rhel8}
+%define tcpwrappers 0
+%else
+%define tcpwrappers 1
+%endif
+
 
 # do we need to patch for old postgresql version?
 %define old_pgsql 0
@@ -358,8 +364,10 @@ BuildRequires: libstdc++-static-devel
 BuildRequires: glibc-static-devel
 %endif
 
-%if %{mysql} && ! %{suse}
+%if %{mysql} && ! %{suse} && ! %{rhel7}
 BuildRequires: mysql-devel
+%else
+BuildRequires: mariadb-devel
 %endif
 
 %if %{postgresql}
@@ -639,7 +647,9 @@ export BACULA="Bacula"
 %if %{usesystemd}
         --with-systemd=%{systemd_dir} \
 %endif
+%if %{tcpwrappers}
         --with-tcp-wrappers  \
+%endif
         --with-dir-user=%{director_daemon_user} \
         --with-dir-group=%{daemon_group} \
         --with-sd-user=%{storage_daemon_user} \
