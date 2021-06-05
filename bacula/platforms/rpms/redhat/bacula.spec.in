@@ -364,10 +364,12 @@ BuildRequires: libstdc++-static-devel
 BuildRequires: glibc-static-devel
 %endif
 
-%if %{mysql} && ! %{suse} && ! %{rhel7}
-BuildRequires: mysql-devel
-%else
+%if %{mysql} && ! %{suse}
+%if %{rhel7}
 BuildRequires: mariadb-devel
+%else
+BuildRequires: mysql-devel
+%endif
 %endif
 
 %if %{postgresql}
