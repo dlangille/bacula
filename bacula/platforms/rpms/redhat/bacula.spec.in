@@ -384,17 +384,14 @@ BuildRequires: %{postgres_devel_package} >= %{postgres_version}
 #
 %if %{mysql}
 %package mysql
-Provides: bacula-mysql
 #
 # The following provides is to work around an 
 #  auto generated requires from src/scripts/logwatch/applybaculadate
 #  this is a gross kludge to keep it from being a requirement
 #
-Provides: perl(Logwatch)
 %endif
 %if %{postgresql}
 %package postgresql
-Provides: bacula-postgresql
 %endif
 
 Summary: Bacula - The Network Backup Solution
@@ -622,6 +619,7 @@ export BACULA="Bacula"
         --with-logdir=%{log_dir} \
         --with-pid-dir=%{pid_dir} \
         --with-subsys-dir=%{_subsysdir} \
+	--libdir=%{lib_dir} \
         --enable-smartalloc \
         --disable-conio \
         --enable-readline \
@@ -719,7 +717,7 @@ rm -f $RPM_BUILD_ROOT%{script_dir}/stopmysql
 #rm -f $RPM_BUILD_ROOT%{_libdir}/libbaccats.so
 #rm -f $RPM_BUILD_ROOT%{_libdir}/libbaccats-%{version}.so
 
-rm -f $RPM_BUILD_ROOT%{_libdir}/libbacsd.la
+rm -f $RPM_BUILD_ROOT%{lib_dir}/libbacsd.la
 rm -f $RPM_BUILD_ROOT%{plugin_dir}/docker-fd.so
 
 # install the init scripts
@@ -832,9 +830,9 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(-, root, %{daemon_group}) %{script_dir}/drop_mysql_tables
 %attr(-, root, %{daemon_group}) %{script_dir}/update_mysql_tables
 %attr(-, root, %{daemon_group}) %{script_dir}/grant_mysql_privileges
-%{_libdir}/libbaccats*
-%{_libdir}/libbacsql*
-%{_libdir}/libbacsd*.so
+%{lib_dir}/libbaccats*
+%{lib_dir}/libbacsql*
+%{lib_dir}/libbacsd*.so
 %endif
 
 
@@ -847,9 +845,9 @@ rm -f $RPM_BUILD_DIR/Release_Notes-%{version}-%{release}.txt
 %attr(755, root, %{daemon_group}) %{script_dir}/drop_postgresql_tables
 %attr(755, root, %{daemon_group}) %{script_dir}/update_postgresql_tables
 %attr(755, root, %{daemon_group}) %{script_dir}/grant_postgresql_privileges
-%{_libdir}/libbaccats*
-%{_libdir}/libbacsql*
-%{_libdir}/libbacsd*.so
+%{lib_dir}/libbaccats*
+%{lib_dir}/libbacsql*
+%{lib_dir}/libbacsd*.so
 %endif
 
 # The rest is DB backend independent
@@ -1345,10 +1343,10 @@ fi
 
 %files libs
 %defattr(-,root,root)
-%{_libdir}/libbac-*
-%{_libdir}/libbac.*
-%{_libdir}/libbaccfg*
-%{_libdir}/libbacfind*
+%{lib_dir}/libbac-*
+%{lib_dir}/libbac.*
+%{lib_dir}/libbaccfg*
+%{lib_dir}/libbacfind*
 
 %post libs
 /sbin/ldconfig
