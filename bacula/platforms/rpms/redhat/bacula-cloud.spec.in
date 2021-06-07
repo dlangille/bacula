@@ -154,7 +154,7 @@ make DESTDIR=$RPM_BUILD_ROOT -C ../bacula-%{_version}/src/stored install-cloud
 make DESTDIR=$RPM_BUILD_ROOT -C ../bacula-%{_version}/src/stored install-s3-cloud
 
 # install libs3 lib files
-cp -p %{depkgs}/libs3*/build/lib/*.so* $RPM_BUILD_ROOT%{_libdir}
+cp -p %{depkgs}/libs3*/build/lib/*.so* $RPM_BUILD_ROOT%{lib_dir}
 
 # remove unneeded files
 rm -rf $RPM_BUILD_ROOT%{_mandir}
@@ -186,7 +186,7 @@ cp -p %{depkgs}/libs3-*/LICENSE $RPM_BUILD_ROOT%{docdir}/bacula-cloud-storage/li
 %defattr(-,root,root)
 %attr(755, root, root) %{plugin_dir}/bacula-sd-cloud-driver-%{version}.so
 %attr(755, root, root) %{plugin_dir}/bacula-sd-cloud-s3-driver-%{version}.so
-%{_libdir}/libs3*
+%{lib_dir}/libs3*
 %{docdir}/bacula-cloud-storage/libs3.license
 
 %clean
