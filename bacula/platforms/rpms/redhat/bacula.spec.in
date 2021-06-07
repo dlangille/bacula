@@ -319,7 +319,7 @@ Distribution: %_dist
 %{?build_tcpwrappers:%define tcpwrappers 1}
 
 # should we enable tcp wrappers support
-%if %{rhel8}
+%if %{rhel8} || %{fc31}
 %define tcpwrappers 0
 %else
 %define tcpwrappers 1
