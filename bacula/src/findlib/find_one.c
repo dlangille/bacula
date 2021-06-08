@@ -272,7 +272,7 @@ bool has_file_changed(JCR *jcr, FF_PKT *ff_pkt)
    }
 
    if ((int64_t)statp.st_size != (int64_t)ff_pkt->statp.st_size) {
-      Jmsg(jcr, M_ERROR, 0, _("%s size of %lld changed during backup to %lld.n"),ff_pkt->fname,
+      Jmsg(jcr, M_ERROR, 0, _("%s size of %lld changed during backup to %lld.\n"),ff_pkt->fname,
          (int64_t)ff_pkt->statp.st_size, (int64_t)statp.st_size);
       Dmsg3(50, "%s size (%lld) changed during backup (%lld).\n", ff_pkt->fname,
             (int64_t)ff_pkt->statp.st_size, (int64_t)statp.st_size);
