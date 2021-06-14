@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2020 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a backup and trigger the Max Diff Interval
+#
+TestName="maxdiffinterval-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp $scripts/bacula-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >$scripts/bacula-dir.conf
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@output /dev/null
+messages
+@$out $tmp/log1.out
+setdebug level=4 storage=File1
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+run job=$JobName yes
+wait
+messages
+@sleep 1
+@exec "touch $cwd/build/po/fr.po"
+run job=$JobName yes
+wait
+messages
+@sleep 1
+@exec "touch $cwd/build/po/en.po"
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bacula
+
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'MaxDiffInterval', '1s', 'Job')"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+reload
+@# Here the differential should be started
+@$out $tmp/log3.out
+run job=$JobName yes
+wait
+messages
+list files jobid=4
+@# 
+@# now do a restore
+@#
+@$out $tmp/log2.out  
+setdebug level=4 storage=File1
+restore jobid=1,4 where=$tmp/bacula-restores all done
+yes
+wait
+messages
+@$out $tmp/log4.out
+run job=$JobName level=Differential yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File1
+stop_bacula
+
+check_two_logs
+$rscripts/diff.pl -s $cwd/build -d $tmp/bacula-restores/$cwd/build
+if [ $? -ne 0 ]; then
+    print_debug "ERROR: Found difference between  $cwd/build $tmp/bacula-restores/$cwd/build"
+    estat=1
+fi
+end_test
