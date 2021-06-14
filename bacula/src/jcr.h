@@ -369,7 +369,7 @@ public:
    JOB *previous_job;                 /* Job resource of migration previous job */
    JCR *wjcr;                         /* JCR for migration/copy write job */
    char FSCreateTime[MAX_TIME_LENGTH]; /* FileSet CreateTime as returned from DB */
-   char since[MAX_TIME_LENGTH];       /* since time */
+   char since[MAX_NAME_LENGTH];       /* since time */
    char PrevJob[MAX_NAME_LENGTH];     /* Previous job name assiciated with since time */
    union {
       JobId_t RestoreJobId;           /* Id specified by UA */

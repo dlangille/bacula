@@ -217,6 +217,7 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
    utime_t last_full_time = 0;
    utime_t last_diff_time;
    char prev_job[MAX_NAME_LENGTH], edl[50];
+   char last_full_stime[MAX_TIME_LENGTH];
    const char *reason = "";
    POOL_MEM reason2;
 
@@ -232,6 +233,8 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
       jcr->stime = get_pool_memory(PM_MESSAGE);
    }
    jcr->PrevJob[0] = jcr->stime[0] = 0;
+   last_full_stime[0] = 0;
+
    /*
     * Lookup the last FULL backup job to get the time/date for a
     * differential or incremental save.
@@ -255,6 +258,8 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
                                               &stime, prev_job, L_FULL);
       if (have_full) {
          last_full_time = str_to_utime(stime);
+         bstrncpy(last_full_stime, stime, sizeof(last_full_stime));
+
       } else {
          do_full = true;               /* No full, upgrade to one */
 
@@ -308,9 +313,8 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
          if (do_full) {
             reason = _("Max Full Interval exceeded. ");
          }
-      }
-      else
-      if (have_full && jcr->job->MaxVirtualFullInterval > 0) {
+
+      } else if (have_full && jcr->job->MaxVirtualFullInterval > 0) { /* Not used in BEE, not a real job */
          do_vfull = ((now - last_full_time) >= jcr->job->MaxVirtualFullInterval);
       }
       
@@ -325,6 +329,7 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
          bsnprintf(since, since_len, _(" (upgraded from %s)"),
                    level_to_str(edl , sizeof(edl), jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_FULL);
+
       } else if (do_vfull) {
          /* No recent Full job found, and MaxVirtualFull is set so upgrade this one to Virtual Full */
          Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
@@ -332,12 +337,16 @@ void get_level_since_time(JCR *jcr, char *since, int since_len)
          bsnprintf(since, since_len, _(" (upgraded from %s)"),
                    level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_VIRTUAL_FULL);
+
       } else if (do_diff) {
          /* No recent diff job found, so upgrade this one to Diff */
          Jmsg(jcr, M_INFO, 0, _("%sDoing Differential backup.\n"), reason);
-         bsnprintf(since, since_len, _(" (upgraded from %s)"),
-                   level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
+         pm_strcpy(jcr->stime, last_full_stime);
+         bsnprintf(since, since_len, _(", since=%s (upgraded from %s)"),
+                   jcr->stime, level_to_str(edl, sizeof(edl), jcr->getJobLevel()));
+
          jcr->setJobLevel(jcr->jr.JobLevel = L_DIFFERENTIAL);
+
       } else {
          if (jcr->job->rerun_failed_levels) {
 
