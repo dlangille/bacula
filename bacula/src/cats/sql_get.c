@@ -1472,17 +1472,9 @@ bool BDB::bdb_get_accurate_jobids(JCR *jcr,
    /* If we are comming from bconsole, we must ensure that we
     * have a unique name.
     */
-   if (jcr->JobId == 0) {
-      P(btemp_mutex);
-      bsnprintf(jobid, sizeof(jobid), "0%u", btemp_cur++);
-      V(btemp_mutex);
-   } else {
-      /* TODO: Here we have a hint on the JobId to return
-       * depdending on the Job level of the hint, we must
-       * adapt one of the queries (F, D, I) and add a JobId=x
-       */
-      edit_uint64(jcr->JobId, jobid);
-   }
+   P(btemp_mutex);
+   bsnprintf(jobid, sizeof(jobid), "0%u", btemp_cur++);
+   V(btemp_mutex);
 
    if (jr->Name[0] != 0) {
       bdb_escape_string(jcr, esc, jr->Name, strlen(jr->Name));
