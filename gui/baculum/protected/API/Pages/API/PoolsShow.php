@@ -19,7 +19,10 @@
  *
  * Bacula(R) is a registered trademark of Kern Sibbald.
  */
- 
+
+Prado::using('Application.API.Class.ConsoleOutputPage');
+Prado::using('Application.API.Class.ConsoleOutputShowPage');
+
 /**
  * Show pools command endpoint.
  *
@@ -27,17 +30,19 @@
  * @category API
  * @package Baculum API
  */
-class PoolsShow extends BaculumAPIServer {
+class PoolsShow extends ConsoleOutputShowPage {
 
 	public function get() {
+		$out_format = $this->Request->contains('output') && $this->isOutputFormatValid($this->Request['output']) ? $this->Request['output'] : ConsoleOutputPage::OUTPUT_FORMAT_RAW;
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('.pool')
+			['.pool'],
+			null,
+			true
 		);
 
 		$pool = null;
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
 			if ($this->Request->contains('name')) {
 				if (in_array($this->Request['name'], $result->output)) {
 					$pool = $this->Request['name'];
@@ -52,20 +57,64 @@ class PoolsShow extends BaculumAPIServer {
 			$this->error = $result->exitcode;
 			return;
 		}
-
-		$cmd = array('show');
+		$params = [];
 		if (is_string($pool)) {
-			$cmd[] = 'pool="' . $pool . '"';
+			$params = ['pool' => $pool];
+		}
+		$out = (object)[
+			'output' => [],
+			'exitcode' => 0
+		];
+		if ($out_format === ConsoleOutputPage::OUTPUT_FORMAT_RAW) {
+			$out = $this->getRawOutput($params);
+		} elseif($out_format === ConsoleOutputPage::OUTPUT_FORMAT_JSON) {
+			$out = $this->getJSONOutput($params);
+		}
+		$this->output = $out->output;
+		$this->error = $out->exitcode;
+	}
+
+	/**
+	 * Get show pools output from console in raw format.
+	 *
+	 * @param array $params command  parameters
+	 * @return StdClass object with output and exitcode
+	 */
+	protected function getRawOutput($params = []) {
+		$cmd = ['show'];
+		if (key_exists('pool', $params)) {
+			$cmd[] = 'pool="' . $params['pool'] . '"';
 		} else {
 			$cmd[] = 'pools';
 		}
-
-		$result = $this->getModule('bconsole')->bconsoleCommand(
+		return $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
 			$cmd
 		);
-		$this->output = $result->output;
-		$this->error = $result->exitcode;
+	}
+
+	/**
+	 * Get show pools output in JSON format.
+	 *
+	 * @param array $params command parameters
+	 * @return StdClass object with output and exitcode
+	 */
+	protected function getJSONOutput($params = []) {
+		$result = (object)[
+			'output' => [],
+			'exitcode' => 0
+		];
+		$output = $this->getRawOutput($params);
+		if ($output->exitcode === 0) {
+			array_shift($output->output);
+			if (key_exists('pool', $params)) {
+				$result->output = $this->parseOutput($output->output);
+			} else {
+				$result->output = $this->parseOutputAll($output->output);
+			}
+		}
+		$result->exitcode = $output->exitcode;
+		return $result;
 	}
 }
 ?>

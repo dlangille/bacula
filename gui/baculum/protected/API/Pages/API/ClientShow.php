@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -21,6 +21,7 @@
  */
 
 Prado::using('Application.API.Class.ConsoleOutputPage');
+Prado::using('Application.API.Class.ConsoleOutputShowPage');
 
 /**
  * Client show command endpoint.
@@ -29,24 +30,28 @@ Prado::using('Application.API.Class.ConsoleOutputPage');
  * @category API
  * @package Baculum API
  */
-class ClientShow extends ConsoleOutputPage {
+class ClientShow extends ConsoleOutputShowPage {
 
 	public function get() {
 		$clientid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
-		$out_format = $this->Request->contains('output') && $this->isOutputFormatValid($this->Request['output']) ? $this->Request['output'] : parent::OUTPUT_FORMAT_RAW;
+		$out_format = $this->Request->contains('output') && $this->isOutputFormatValid($this->Request['output']) ? $this->Request['output'] : ConsoleOutputPage::OUTPUT_FORMAT_RAW;
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('.client')
+			['.client'],
+			null,
+			true
 		);
 		if ($result->exitcode === 0) {
-			array_shift($result->output);
 			$client = $this->getModule('client')->getClientById($clientid);
 			if (is_object($client) && in_array($client->name, $result->output)) {
-				$out = (object)array('output' => array(), 'exitcode' => 0);
-				if ($out_format === parent::OUTPUT_FORMAT_RAW) {
-					$out = $this->getRawOutput(array('client' => $client->name));
-				} elseif($out_format === parent::OUTPUT_FORMAT_JSON) {
-					$out = $this->getJSONOutput(array('client' => $client->name));
+				$out = (object)[
+					'output' => [],
+					'exitcode' => 0
+				];
+				if ($out_format === ConsoleOutputPage::OUTPUT_FORMAT_RAW) {
+					$out = $this->getRawOutput(['client' => $client->name]);
+				} elseif($out_format === ConsoleOutputPage::OUTPUT_FORMAT_JSON) {
+					$out = $this->getJSONOutput(['client' => $client->name]);
 				}
 				$this->output = $out->output;
 				$this->error = $out->exitcode;
@@ -67,11 +72,10 @@ class ClientShow extends ConsoleOutputPage {
 	 * @return StdClass object with output and exitcode
 	 */
 	protected function getRawOutput($params = []) {
-		$result = $this->getModule('bconsole')->bconsoleCommand(
+		return $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('show', 'client="' . $params['client'] . '"')
+			['show', 'client="' . $params['client'] . '"']
 		);
-		return $result;
 	}
 
 	/**
@@ -81,25 +85,14 @@ class ClientShow extends ConsoleOutputPage {
 	 * @return StdClass object with output and exitcode
 	 */
 	protected function getJSONOutput($params = []) {
-		$result = (object)array('output' => array(), 'exitcode' => 0);
+		$result = (object)[
+			'output' => [],
+			'exitcode' => 0
+		];
 		$output = $this->getRawOutput($params);
 		if ($output->exitcode === 0) {
 			array_shift($output->output);
-			for ($i = 0; $i < count($output->output); $i++) {
-				if (preg_match_all('/(?<=\s)\w+=.+?(?=\s+\w+=.+|$)/i', $output->output[$i], $matches) > 0) {
-					for ($j = 0; $j < count($matches[0]); $j++) {
-						list($key, $value) = explode('=', $matches[0][$j], 2);
-						if (key_exists($key, $result->output)) {
-							/*
-							 * The most important options are in first lines.
-							 * If keys are double skip the second ones
-							 */
-							continue;
-						}
-						$result->output[strtolower($key)] = $value;
-					}
-				}
-			}
+			$result->output = $this->parseOutput($output->output);
 		}
 		$result->exitcode = $output->exitcode;
 		return $result;

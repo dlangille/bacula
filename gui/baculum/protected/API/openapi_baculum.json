@@ -715,6 +715,9 @@
 							"type": "string",
 							"pattern": "[a-zA-Z0-9:.-_ ]+"
 						}
+					},
+					{
+						"$ref": "#/components/parameters/Output"
 					}
 				]
 			}
@@ -975,6 +978,9 @@
 						"schema": {
 							"type": "integer"
 						}
+					},
+					{
+						"$ref": "#/components/parameters/Output"
 					}
 				]
 			}
@@ -1717,6 +1723,9 @@
 							"type": "string",
 							"pattern": "[a-zA-Z0-9:.-_ ]+"
 						}
+					},
+					{
+						"$ref": "#/components/parameters/Output"
 					}
 				]
 			}
@@ -2381,9 +2390,14 @@
 						}
 					}
 				},
-				"parameters": [{
-					"$ref": "#/components/parameters/PoolId"
-				}]
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/PoolId"
+					},
+					{
+						"$ref": "#/components/parameters/Output"
+					}
+				]
 			}
 		},
 		"/api/v2/pools/{poolid}/update": {

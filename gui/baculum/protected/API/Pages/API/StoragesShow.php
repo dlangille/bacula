@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -21,6 +21,7 @@
  */
  
 Prado::using('Application.API.Class.ConsoleOutputPage');
+Prado::using('Application.API.Class.ConsoleOutputShowPage');
 
 /**
  * Show storages command endpoint.
@@ -29,13 +30,13 @@ Prado::using('Application.API.Class.ConsoleOutputPage');
  * @category API
  * @package Baculum API
  */
-class StoragesShow extends ConsoleOutputPage {
+class StoragesShow extends ConsoleOutputShowPage {
 
 	public function get() {
-		$out_format = $this->Request->contains('output') && $this->isOutputFormatValid($this->Request['output']) ? $this->Request['output'] : parent::OUTPUT_FORMAT_RAW;
+		$out_format = $this->Request->contains('output') && $this->isOutputFormatValid($this->Request['output']) ? $this->Request['output'] : ConsoleOutputPage::OUTPUT_FORMAT_RAW;
 		$result = $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
-			array('.storage'),
+			['.storage'],
 			null,
 			true
 		);
@@ -55,12 +56,19 @@ class StoragesShow extends ConsoleOutputPage {
 			$this->error = $result->exitcode;
 			return;
 		}
+		$params = [];
+		if (is_string($storage)) {
+			$params = ['storage' => $storage];
+		}
 
-		$out = (object)['output' => [], 'exitcode' => 0];
-		if ($out_format === parent::OUTPUT_FORMAT_RAW) {
-			$out = $this->getRawOutput(['storage' => $storage]);
-		} elseif($out_format === parent::OUTPUT_FORMAT_JSON) {
-			$out = $this->getJSONOutput(['storage' => $storage]);
+		$out = (object)[
+			'output' => [],
+			'exitcode' => 0
+		];
+		if ($out_format === ConsoleOutputPage::OUTPUT_FORMAT_RAW) {
+			$out = $this->getRawOutput($params);
+		} elseif($out_format === ConsoleOutputPage::OUTPUT_FORMAT_JSON) {
+			$out = $this->getJSONOutput($params);
 		}
 
 		$this->output = $out->output;
@@ -74,18 +82,17 @@ class StoragesShow extends ConsoleOutputPage {
 	 * @return StdClass object with output and exitcode
 	 */
 	protected function getRawOutput($params = []) {
-		$cmd = array('show');
-		if (is_string($params['storage'])) {
+		$cmd = ['show'];
+		if (key_exists('storage', $params)) {
 			$cmd[] = 'storage="' . $params['storage'] . '"';
 		} else {
 			$cmd[] = 'storages';
 		}
-		$result = $this->getModule('bconsole')->bconsoleCommand(
+		return $this->getModule('bconsole')->bconsoleCommand(
 			$this->director,
 			$cmd,
 			true
 		);
-		return $result;
 	}
 
 	/**
@@ -95,32 +102,17 @@ class StoragesShow extends ConsoleOutputPage {
 	 * @return StdClass object with output and exitcode
 	 */
 	protected function getJSONOutput($params = []) {
-		$result = (object)['output' => [], 'exitcode' => 0];
+		$result = (object)[
+			'output' => [],
+			'exitcode' => 0
+		];
 		$output = $this->getRawOutput($params);
 		if ($output->exitcode === 0) {
-			$part = [];
-			for ($i = 0; $i < count($output->output); $i++) {
-				if (preg_match_all('/(?<=\s)\w+=.+?(?=\s+\w+=.+|$)/i', $output->output[$i], $matches) > 0) {
-					for ($j = 0; $j < count($matches[0]); $j++) {
-						list($key, $value) = explode('=', $matches[0][$j], 2);
-						if (key_exists($key, $result->output)) {
-							/*
-							 * The most important options are in first lines.
-							 * If keys are double skip the second ones
-							 */
-							continue;
-						}
-						if ($key == 'name' && count($part) > 0) {
-							$result->output[] = $part;
-							$part = [];
-						}
-						$part[strtolower($key)] = $value;
-					}
-				}
-			}
-			if (count($part) > 0) {
-				$result->output[] = $part;
-				$part = [];
+			array_shift($output->output);
+			if (key_exists('storage', $params)) {
+				$result->output = $this->parseOutput($output->output);
+			} else {
+				$result->output = $this->parseOutputAll($output->output);
 			}
 		}
 		$result->exitcode = $output->exitcode;
