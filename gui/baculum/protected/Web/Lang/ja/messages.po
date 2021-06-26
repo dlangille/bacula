@@ -811,9 +811,6 @@ msgstr "言語"
 msgid "Language:"
 msgstr "言語:"
 
-msgid "Last 10 jobs"
-msgstr "直近10件のジョブ実行結果"
-
 msgid "Last 12 hours"
 msgstr "Last 12 hours"
 

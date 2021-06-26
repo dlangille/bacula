@@ -1449,9 +1449,6 @@ msgstr "Имя"
 msgid "JobId"
 msgstr "Id задания"
 
-msgid "Last 10 jobs"
-msgstr "Последние 10 заданий"
-
 msgid "More jobs"
 msgstr "Больше заданий"
 

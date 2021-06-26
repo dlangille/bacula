@@ -573,12 +573,10 @@ var oLastJobsList = {
 		last_jobs_list_body: 'lats_jobs_list_body'
 	},
 	init: function(data) {
-		this.destroy();
-		this.set_table(data);
-	},
-	destroy: function() {
 		if (this.last_jobs_table) {
-			this.last_jobs_table.destroy();
+			update_job_table(this.last_jobs_table, data);
+		} else {
+			this.set_table(data);
 		}
 	},
 	set_table: function(data) {
@@ -586,8 +584,12 @@ var oLastJobsList = {
 			data: data,
 			bInfo: false,
 			paging: false,
-			searching: false,
 			deferRender: true,
+			dom: 'lBfrtip',
+			stateSave: true,
+			buttons: [
+				'copy', 'csv', 'colvis'
+			],
 			columns: [
 				{
 					className: 'details-control',
@@ -604,6 +606,13 @@ var oLastJobsList = {
 					responsivePriority: 2
 				},
 				{
+					data: 'type',
+					render: function(data, type, row) {
+						return JobType.get_type(data);
+					},
+					visible: false,
+				},
+				{
 					data: 'level',
 					render: function(data, type, row) {
 						return (['R', 'D'].indexOf(row.type) === -1 ? JobLevel.get_level(data) : '-');
@@ -611,14 +620,109 @@ var oLastJobsList = {
 					responsivePriority: 3
 				},
 				{
+					data: 'clientid',
+					visible: false
+				},
+				{
+					data: 'client',
+					visible: false
+				},
+				{
+					data: 'schedtime',
+					render: render_date,
+					visible: false
+				},
+				{
 					data: 'starttime',
 					render: render_date,
 					responsivePriority: 5
 				},
 				{
+					data: 'endtime',
+					render: render_date,
+					visible: false
+				},
+				{
+					data: 'realendtime',
+					render: render_date,
+					visible: false
+				},
+				{
+					data: 'jobtdate',
+					render: render_date_ts,
+					visible: false
+				},
+				{
+					data: 'volsessionid',
+					visible: false
+				},
+				{
+					data: 'volsessiontime',
+					render: render_date_ts,
+					visible: false
+				},
+				{
+					data: 'jobbytes',
+					render: render_bytes
+				},
+				{
+					data: 'readbytes',
+					render: render_bytes,
+					visible: false
+				},
+				{data: 'jobfiles'},
+				{
 					data: 'jobstatus',
 					render: render_jobstatus,
 					responsivePriority: 4
+				},
+				{
+					data: 'joberrors',
+					visible: false
+				},
+				{
+					data: 'jobmissingfiles',
+					visible: false
+				},
+				{
+					data: 'poolid',
+					visible: false
+				},
+				{
+					data: 'pool',
+					visible: false
+				},
+				{
+					data: 'filesetid',
+					visible: false
+				},
+				{
+					data: 'fileset',
+					visible: false
+				},
+				{
+					data: 'priorjobid',
+					visible: false
+				},
+				{
+					data: 'purgedfiles',
+					visible: false
+				},
+				{
+					data: 'hasbase',
+					visible: false
+				},
+				{
+					data: 'reviewed',
+					visible: false
+				},
+				{
+					data: 'comment',
+					visible: false
+				},
+				{
+					data: 'filetable',
+					visible: false
 				}
 			],
 			responsive: {
@@ -633,7 +737,7 @@ var oLastJobsList = {
 			},
 			{
 				className: "dt-center",
-				targets: [ 1, 3, 4, 5 ]
+				targets: [ 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29 ]
 			}],
 			order: [1, 'desc']
 		});
@@ -716,8 +820,8 @@ var Dashboard = {
 		document.getElementById(this.ids.clients.jobs).textContent = occupancy;
 	},
 	update_job_access: function() {
-		// get last 10 jobs
-		var data = this.stats.jobs.slice(0, 10);
+		// get last 15 jobs
+		var data = this.stats.jobs.slice(0, 15);
 		oLastJobsList.init(data);
 	},
 	update_jobs: function() {

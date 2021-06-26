@@ -1449,9 +1449,6 @@ msgstr "Nome"
 msgid "JobId"
 msgstr "JobId"
 
-msgid "Last 10 jobs"
-msgstr "Último 10 jobs"
-
 msgid "More jobs"
 msgstr "Mostrar mais jobs"
 
