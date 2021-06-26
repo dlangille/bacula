@@ -3420,3 +3420,24 @@ msgstr "SD port"
 
 msgid "Configure storage daemon"
 msgstr "Configure storage daemon"
+
+msgid "# Directories:"
+msgstr "# Directories:"
+
+msgid "# Files:"
+msgstr "# Files:"
+
+msgid "Search..."
+msgstr "Search..."
+
+msgid "case sensitive"
+msgstr "case sensitive"
+
+msgid "Backup client"
+msgstr "Backup client"
+
+msgid "Job type"
+msgstr "Job type"
+
+msgid "Restore time point"
+msgstr "Restore time point"
