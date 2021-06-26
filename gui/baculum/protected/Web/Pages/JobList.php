@@ -42,12 +42,18 @@ class JobList extends BaculumWebPage {
 			return;
 		}
 		$result = $this->getModule('api')->get(
-			array('jobs', 'resnames'), null, true, self::USE_CACHE
-		)->output;
-		$jobs = array();
-		foreach ($result as $director => $job_list) {
-			for ($i = 0; $i < count($job_list); $i++) {
-				$jobs[] = array('director' => $director, 'job' => $job_list[$i]);
+			['jobs', 'show', '?output=json'], null, true, self::USE_CACHE
+		);
+		$jobs = [];
+		if ($result->error === 0) {
+			for ($i = 0; $i < count($result->output); $i++) {
+				$jobs[] = [
+					'job' => $result->output[$i]->name,
+					'enabled' => $result->output[$i]->enabled,
+					'priority' => $result->output[$i]->priority,
+					'type' => chr($result->output[$i]->jobtype),
+					'maxjobs' => $result->output[$i]->maxjobs
+				];
 			}
 		}
 		$this->jobs = $jobs;
