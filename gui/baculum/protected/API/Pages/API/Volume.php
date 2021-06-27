@@ -89,6 +89,31 @@ class Volume extends BaculumAPIServer {
 			$this->error = VolumeError::ERROR_VOLUME_DOES_NOT_EXISTS;
 		}
 	}
+
+	public function remove() {
+		$mediaid = $this->Request->contains('id') ? intval($this->Request['id']) : 0;
+		$volume = $this->getModule('volume')->getVolumeById($mediaid);
+		if (is_object($volume)) {
+			$result = $this->getModule('bconsole')->bconsoleCommand(
+				$this->director,
+				[
+					'delete',
+					'volume="' . $volume->volumename . '"',
+					'yes'
+				]
+			);
+			if ($result->exitcode === 0) {
+				$this->output = $result->output;
+				$this->error = VolumeError::ERROR_NO_ERRORS;
+			} else {
+				$this->output = $result->output;
+				$this->error = VolumeError::ERROR_WRONG_EXITCODE;
+			}
+		} else {
+			$this->output = VolumeError::MSG_ERROR_VOLUME_DOES_NOT_EXISTS;
+			$this->error = VolumeError::ERROR_VOLUME_DOES_NOT_EXISTS;
+		}
+	}
 }
 
 ?>

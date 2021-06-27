@@ -2723,6 +2723,42 @@
 						}
 					}
 				]
+			},
+			"delete": {
+				"tags": ["volumes"],
+				"summary": "Delete volume by MediaId",
+				"description": "Delete volume from the Catalog by specific Volume/Media identifier.",
+				"responses": {
+					"200": {
+						"description": "Volume delete output",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"output": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Delete volume output"
+											}
+										},
+										"error": {
+											"type": "integer",
+											"description": "Error code",
+											"enum": [0, 1, 2, 3, 4, 5, 6, 7, 11, 30, 1000]
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"parameters": [
+					{
+						"$ref": "#/components/parameters/MediaId"
+					}
+				]
 			}
 		},
 		"/api/v2/volumes/{mediaid}/prune": {
