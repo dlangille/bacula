@@ -160,16 +160,35 @@ var oVolumeList = {
 			before: function() {
 				oBulkActionsModal.show_output(true);
 			}
+		},
+		{
+			action: 'delete',
+			label: '<%[ Delete ]%>',
+			value: 'mediaid',
+			callback: <%=$this->DeleteVolumesAction->ActiveControl->Javascript%>,
+			before: function() {
+				oBulkActionsModal.show_output(true);
+			}
 		}
 	],
 	ids: {
 		volume_list: 'volume_list',
 		volume_list_body: 'volume_list_body'
 	},
-	init: function() {
-		this.set_table();
-		this.set_bulk_actions();
-		this.set_events();
+	init: function(data) {
+		if (this.table) {
+			var page = this.table.page();
+			this.table.clear().rows.add(data).draw();
+			this.table.page(page).draw(false);
+			this.table_toolbar.style.display = 'none';
+		} else {
+			this.set_table(data);
+			this.set_bulk_actions();
+			this.set_events();
+		}
+	},
+	update: function(data) {
+		oVolumeList.init(data);
 	},
 	set_events: function() {
 		document.getElementById(this.ids.volume_list).addEventListener('click', function(e) {
@@ -178,9 +197,9 @@ var oVolumeList = {
 			}.bind(this));
 		}.bind(this));
 	},
-	set_table: function() {
+	set_table: function(data) {
 		this.table = $('#' + this.ids.volume_list).DataTable({
-			data: <%=json_encode($this->volumes)%>,
+			data: data,
 			deferRender: true,
 			dom: 'lB<"table_toolbar">frtip',
 			stateSave: true,
@@ -503,9 +522,23 @@ var oVolumeList = {
 			actions: '<%[ Actions ]%>',
 			ok: '<%[ OK ]%>'
 		});
+	},
+	reset_filters: function() {
+		// reset table filters
+		var page = this.table.page();
+		this.table.search('').columns().search('').draw();
+		this.table.page(page).draw(false);
+
+		// reset select values (table engine does not do it automatically)
+		this.table.columns().every(function() {
+			var select = this.footer().querySelector('th > select');
+			if (select) {
+				select.value = '';
+			}
+		});
 	}
 };
-oVolumeList.init();
+oVolumeList.init(<%=json_encode($this->volumes)%>);
 /**
  * Defne bulk actions output id here because expression tags (< % = % >) cannot
  * be defined in the TCallback ClientSide properties.
@@ -530,8 +563,18 @@ var bulk_actions_output_id = '<%=$this->SourceTemplateControl->BulkActions->Bulk
 		oBulkActionsModal.show_loader(false);
 	</prop:ClientSide.OnComplete>
 </com:TCallback>
+<com:TCallback ID="DeleteVolumesAction" OnCallback="deleteVolumes">
+	<prop:ClientSide.OnLoading>
+		oBulkActionsModal.clear_output(bulk_actions_output_id);
+		oBulkActionsModal.show_loader(true);
+	</prop:ClientSide.OnLoading>
+	<prop:ClientSide.OnComplete>
+		oBulkActionsModal.show_loader(false);
+		oVolumeList.reset_filters();
+	</prop:ClientSide.OnComplete>
+</com:TCallback>
 <com:Application.Web.Portlets.BulkActionsModal
 	ID="BulkActions"
-	RefreshPageBtn="true"
+	RefreshPageBtn="false"
 	/>
 </com:TContent>

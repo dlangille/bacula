@@ -31,7 +31,7 @@ Prado::using('Application.Web.Class.BaculumWebPage');
  */
 class VolumeList extends BaculumWebPage {
 
-	const USE_CACHE = true;
+	const USE_CACHE = false;
 
 	public $volumes;
 
@@ -40,11 +40,11 @@ class VolumeList extends BaculumWebPage {
 		if ($this->IsPostBack || $this->IsCallBack) {
 			return;
 		}
-		$this->setVolumes();
+		$this->volumes = $this->getVolumes();
 	}
 
-	public function setVolumes() {
-		$this->volumes = $this->getModule('api')->get(
+	public function getVolumes() {
+		return $this->getModule('api')->get(
 			array('volumes'),
 			null,
 			true,
@@ -74,6 +74,7 @@ class VolumeList extends BaculumWebPage {
 			$result[] = implode(PHP_EOL, $ret->output);
 		}
 		$this->getCallbackClient()->update($this->BulkActions->BulkActionsOutput, implode(PHP_EOL, $result));
+		$this->updateVolumes($sender, $param);
 	}
 
 	/**
@@ -98,6 +99,45 @@ class VolumeList extends BaculumWebPage {
 			$result[] = implode(PHP_EOL, $ret->output);
 		}
 		$this->getCallbackClient()->update($this->BulkActions->BulkActionsOutput, implode(PHP_EOL, $result));
+		$this->updateVolumes($sender, $param);
+	}
+
+	/**
+	 * Delete multiple volumes.
+	 * Used for bulk actions.
+	 *
+	 * @param TCallback $sender callback object
+	 * @param TCallbackEventPrameter $param event parameter
+	 * @return none
+	 */
+	public function deleteVolumes($sender, $param) {
+		$result = [];
+		$mediaids = explode('|', $param->getCallbackParameter());
+		for ($i = 0; $i < count($mediaids); $i++) {
+			$ret = $this->getModule('api')->remove(
+				['volumes', intval($mediaids[$i])]
+			);
+			if ($ret->error !== 0) {
+				$result[] = $ret->output;
+				break;
+			}
+			$result[] = implode(PHP_EOL, $ret->output);
+		}
+		$this->getCallbackClient()->update($this->BulkActions->BulkActionsOutput, implode(PHP_EOL, $result));
+		$this->updateVolumes($sender, $param);
+	}
+
+	/**
+	 * Update volumes callback.
+	 * It updates volume table data.
+	 *
+	 * @param TCallback $sender callback object
+	 * @param TCallbackEventPrameter $param event parameter
+	 * @return none
+	 */
+	public function updateVolumes($sender, $param) {
+		$volumes = $this->getVolumes();
+		$this->getCallbackClient()->callClientFunction('oVolumeList.update', [$volumes]);
 	}
 }
 ?>
