@@ -5,7 +5,7 @@
 		"description": "This is the Baculum API documentation.",
 		"contact": {
 			"name": "Marcin Haba",
-			"url": "https://www.bacula.org/9.6.x-manuals/en/console/Baculum_API_Web_GUI_Tools.html",
+			"url": "https://www.bacula.org/11.0.x-manuals/en/console/Baculum_API_Web_GUI_Tools.html",
 			"email": "marcin.haba@bacula.pl"
 		},
 		"license": {
@@ -107,6 +107,12 @@
 			},
 			"OAuth2Client": {
 				"$ref": "#/definitions/OAuth2Client"
+			},
+			"AutochangerDriveVolume": {
+				"$ref": "#/definitions/AutochangerDriveVolume"
+			},
+			"AutochangerSlotVolume": {
+				"$ref": "#/definitions/AutochangerSlotVolume"
 			}
 		},
 		"parameters": {
@@ -4795,21 +4801,21 @@
 													"type": "array",
 													"description": "Tape drive list",
 													"items": {
-														"$ref": "#/components/parameters/AutochangerDriveVolume"
+														"$ref": "#/components/schemas/AutochangerDriveVolume"
 													}
 												},
 												"slots": {
 													"type": "array",
 													"description": "Regular slot list",
 													"items": {
-														"$ref": "#/components/parameters/AutochangerSlotVolume"
+														"$ref": "#/components/schemas/AutochangerSlotVolume"
 													}
 												},
 												"ie_slots": {
 													"type": "array",
 													"description": "Import/export slot list",
 													"items": {
-														"$ref": "#/components/parameters/AutochangerSlotVolume"
+														"$ref": "#/components/schemas/AutochangerSlotVolume"
 													}
 												}
 											}
