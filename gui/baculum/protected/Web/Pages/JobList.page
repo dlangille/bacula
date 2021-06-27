@@ -106,20 +106,26 @@ var oJobList = {
 							}
 						}
 						return ret;
-					}.bind(this)
+					}.bind(this),
+					responsivePriority: 3
 				},
-				{data: 'job'},
+				{
+					data: 'job',
+					responsivePriority: 1
+				},
 				{
 					data: 'type',
 					render: function(data, type, row) {
 						return JobType.get_type(data);
-					}
+					},
+					responsivePriority: 2
 				},
 				{
 					data: 'enabled',
 					render: function(data, type, row) {
 						return (data == 1 ? '<%[ Yes ]%>' : '<%[ No ]%>');
-					}
+					},
+					responsivePriority: 4
 				},
 				{data: 'maxjobs'},
 				{
