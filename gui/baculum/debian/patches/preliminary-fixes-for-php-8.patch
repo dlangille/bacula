@@ -1,0 +1,109 @@
+From a03c2d95ff0d19e99af538e072f623c476b6e13f Mon Sep 17 00:00:00 2001
+From: Fabio <ctrlaltca@gmail.com>
+Date: Fri, 27 Nov 2020 13:54:46 +0100
+Subject: [PATCH] Preliminary fixes for php 8
+
+---
+ .travis.yml                                          |  3 ++-
+ framework/I18N/core/Gettext/TGettext.php             |  1 -
+ framework/PradoBase.php                              |  2 +-
+ framework/TPropertyValue.php                         |  2 +-
+ .../ActiveControls/ActiveButtonTestCase.php          | 12 +++++++++---
+ 5 files changed, 13 insertions(+), 7 deletions(-)
+
+diff --git a/.travis.yml b/.travis.yml
+index 9a461aff1..2ded5d507 100644
+--- a/.travis.yml
++++ b/.travis.yml
+@@ -1,6 +1,6 @@
+ language: php
+ os: linux
+-dist: trusty
++dist: bionic
+ 
+ services:
+   - mysql
+@@ -10,6 +10,7 @@ php:
+   - 7.2
+   - 7.3
+   - 7.4
++  - nightly
+ 
+ before_script:
+   - composer self-update
+diff --git a/framework/I18N/core/Gettext/TGettext.php b/framework/I18N/core/Gettext/TGettext.php
+index 09d93f9b2..9c7b21929 100644
+--- a/framework/I18N/core/Gettext/TGettext.php
++++ b/framework/I18N/core/Gettext/TGettext.php
+@@ -41,7 +41,6 @@ namespace Prado\I18N\core\Gettext;
+ /**
+  * Use PHPs builtin error messages
+  */
+-//ini_set('track_errors', true);
+ use Exception;
+ 
+ /**
+diff --git a/framework/PradoBase.php b/framework/PradoBase.php
+index 5ecdfb4d4..ac3cd4140 100644
+--- a/framework/PradoBase.php
++++ b/framework/PradoBase.php
+@@ -136,7 +136,7 @@ class PradoBase
+ 
+ 	/**
+ 	 * Class autoload loader.
+-	 * This method is provided to be invoked within an __autoload() magic method.
++	 * This method is provided to be registered within an spl_autoload_register() method.
+ 	 * @param string $className class name
+ 	 */
+ 	public static function autoload($className)
+diff --git a/framework/TPropertyValue.php b/framework/TPropertyValue.php
+index 9dfe7f0ed..8285bca99 100644
+--- a/framework/TPropertyValue.php
++++ b/framework/TPropertyValue.php
+@@ -62,7 +62,7 @@ class TPropertyValue
+ 	public static function ensureBoolean($value)
+ 	{
+ 		if (is_string($value)) {
+-			return strcasecmp($value, 'true') == 0 || $value != 0;
++			return strcasecmp($value, 'true') == 0 || (is_numeric($value) && $value != 0);
+ 		} else {
+ 			return (boolean) $value;
+ 		}
+diff --git a/tests/FunctionalTests/quickstart/ActiveControls/ActiveButtonTestCase.php b/tests/FunctionalTests/quickstart/ActiveControls/ActiveButtonTestCase.php
+index 43ee9e6a3..0cdb68bb8 100755
+--- a/tests/FunctionalTests/quickstart/ActiveControls/ActiveButtonTestCase.php
++++ b/tests/FunctionalTests/quickstart/ActiveControls/ActiveButtonTestCase.php
+@@ -16,6 +16,12 @@ class QuickstartActiveButtonTestCase extends PradoDemosSelenium2Test
+ 		$this->pauseFairAmount();
+ 		$this->assertElementPresent("//input[@type='submit' and @value=\"I'm clicked\"]");
+ 
++		// an html5 click button
++		$this->assertElementNotPresent("//button[@type='submit' and text()=\"I'm clicked\"]");
++		$this->byXPath("//button[@type='submit' and text()='click me']")->click();
++		$this->pauseFairAmount();
++		$this->assertElementPresent("//button[@type='submit' and text()=\"I'm clicked\"]");
++
+ 		// a command button
+ 		$this->assertElementNotPresent("//input[@type='submit' and @value=\"Name: test, Param: value using callback\"]");
+ 		$this->byXPath("//input[@type='submit' and @value='click me']")->click();
+@@ -23,14 +29,14 @@ class QuickstartActiveButtonTestCase extends PradoDemosSelenium2Test
+ 		$this->assertElementPresent("//input[@type='submit' and @value=\"Name: test, Param: value using callback\"]");
+ 
+ 		// a button causing validation
+-		$this->assertNotVisible('ctl0_body_ctl2');
++		$this->assertNotVisible('ctl0_body_ctl3');
+ 		$this->byXPath("//input[@type='submit' and @value='submit']")->click();
+ 		$this->pauseFairAmount();
+-		$this->assertVisible('ctl0_body_ctl2');
++		$this->assertVisible('ctl0_body_ctl3');
+ 		$this->type("ctl0\$body\$TextBox", "test");
+ 		$this->byXPath("//input[@type='submit' and @value='submit']")->click();
+ 		$this->pauseFairAmount();
+-		$this->assertNotVisible('ctl0_body_ctl2');
++		$this->assertNotVisible('ctl0_body_ctl3');
+ 		$this->assertElementPresent("//input[@type='submit' and @value=\"I'm clicked using callback\"]", "");
+ 	}
+ }
+-- 
+2.26.2
+
