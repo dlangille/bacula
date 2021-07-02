@@ -187,7 +187,7 @@ class SessionRecord extends CommonModule implements SessionItem {
 		return $result;
 	}
 
-	public function forceRefresh() {
+	public static function forceRefresh() {
 		unset($GLOBALS['sess']);
 	}
 

@@ -122,7 +122,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		$resource_type = $this->getResourceType();
 		$resource_name = $this->getResourceName();
 		$directives = array();
-		$parent_directives = array();
+		$parent_directives = new StdClass;
 		$config = new stdClass;
 		$predefined = false;
 		if ($load_values === true) {
@@ -172,7 +172,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 			if (is_object($directive_desc)) {
 				if (property_exists($directive_desc, 'Required')) {
 					$required = $directive_desc->Required;
-					if ($load_values === true && key_exists($directive_name, $parent_directives)) {
+					if ($load_values === true && property_exists($parent_directives, $directive_name)) {
 						// values can be taken from JobDefs
 						$required = false;
 					}

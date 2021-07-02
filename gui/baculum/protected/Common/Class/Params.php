@@ -66,7 +66,7 @@ class Params extends CommonModule {
 		'sat' => 'Saturday'
 	);
 
-	public function getMonthsConfig(array $months_cfg) {
+	public static function getMonthsConfig(array $months_cfg) {
 		$month = '';
 		$month_count = count($months_cfg);
 		$months = array_keys(Params::$months);
@@ -82,7 +82,7 @@ class Params extends CommonModule {
 		return $month;
 	}
 
-	public function getWeeksConfig(array $weeks_cfg) {
+	public static function getWeeksConfig(array $weeks_cfg) {
 		$week = '';
 		$week_count = count($weeks_cfg);
 		$weeks = array_keys(Params::$weeks);
@@ -98,7 +98,7 @@ class Params extends CommonModule {
 		return $week;
 	}
 
-	public function getWdaysConfig(array $wdays_cfg) {
+	public static function getWdaysConfig(array $wdays_cfg) {
 		$wday = '';
 		$wday_count = count($wdays_cfg);
 		$wdays = array_keys(Params::$wdays);
@@ -120,7 +120,7 @@ class Params extends CommonModule {
 	 * @param array $days_cfg days array (ex. array(0,1,2,3,4))
 	 * @return string days config value
 	 */
-	public function getDaysConfig(array $days_cfg) {
+	public static function getDaysConfig(array $days_cfg) {
 		$days = '';
 		if (count($days_cfg) < 31) {
 			$days_map = array_map(array('Params', 'getDayByNo') , $days_cfg);
