@@ -161,7 +161,7 @@ table.dataTable tbody > tr.selected, table.dataTable tbody > tr > .selected {
 
 th.action_col, td.action_col {
 	width: 110px !important;
-	text-align: center;
+	text-align: center !important;
 }
 
 td.action_col button {
