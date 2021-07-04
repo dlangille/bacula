@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-29 18:18\n"
+"PO-Revision-Date: 2021-07-04 19:53\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -3202,10 +3202,10 @@ msgid "Status request timed out. The most probably the Bacula storage is not ava
 msgstr "Истекло время ожидания. Скорее всего, хранилище Bacula недоступно или не работает."
 
 msgid "Display messages log window"
-msgstr "Отображать окно журнала лога"
+msgstr "Показать лог"
 
 msgid "Truncate log"
-msgstr "Обрезать журнал"
+msgstr "Очистить журнал"
 
 msgid "Messages"
 msgstr "Сообщения"
@@ -3298,7 +3298,7 @@ msgid "Changer slots"
 msgstr "Слоты чейнджера"
 
 msgid "Release all I/E slots"
-msgstr ""
+msgstr "Освободить все I/E слоты"
 
 msgid "There are to few regular slots to transfer selected volumes from import/export slots. Full import/export slot count: %ie_slot_count, free regular slot count: %slot_count."
 msgstr "Есть несколько обычных слотов для переноса выбранных томов из слотов импорта / экспорта. Полное количество слотов импорта / экспорта: %ie_slot_count, количество свободных обычных слотов: %slot_count."
