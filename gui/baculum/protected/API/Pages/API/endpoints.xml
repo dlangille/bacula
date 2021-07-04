@@ -102,6 +102,7 @@
 	<url ServiceParameter="Config" pattern="api/v2/config/{component_type}/{resource_type}/" parameters.component_type="[a-z]+" parameters.resource_type="[a-zA-Z]+" />
 	<url ServiceParameter="Config" pattern="api/v2/config/{component_type}/{resource_type}/{resource_name}/" parameters.component_type="[a-z]+" parameters.resource_type="[a-zA-Z]+" parameters.resource_name="[a-zA-Z0-9:.\-_ ]+" />
 	<!-- director endpoints -->
+	<url ServiceParameter="DirectorShow" pattern="api/v2/directors/{name}/show/" parameters.name="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="DirectorStatus" pattern="api/v2/directors/{name}/status/" parameters.name="[a-zA-Z0-9:.\-_ ]+" />
 	<!-- actions endpoints -->
 	<url ServiceParameter="Actions" pattern="api/v2/actions/{component}/{action}/" parameters.component="(director|storage|client)" parameters.action="(start|stop|restart)" />
