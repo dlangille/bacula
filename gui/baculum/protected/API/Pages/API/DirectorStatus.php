@@ -37,7 +37,13 @@ class DirectorStatus extends ConsoleOutputPage {
 		$type = $this->Request->contains('type') && $status->isValidOutputType($this->Request['type']) ? $this->Request['type'] : null;
 		$out_format = $this->Request->contains('output') && $this->isOutputFormatValid($this->Request['output']) ? $this->Request['output'] : parent::OUTPUT_FORMAT_RAW;
 
-		if (is_null($director)) {
+		$dirs = [];
+		$result = $this->getModule('bconsole')->getDirectors();
+		if ($result->exitcode === 0) {
+			$dirs = $result->output;
+		}
+
+		if (is_null($director) || !in_array($director, $dirs)) {
 			// Invalid director
 			$this->output = BconsoleError::MSG_ERROR_INVALID_DIRECTOR;
 			$this->error = BconsoleError::ERROR_INVALID_DIRECTOR;

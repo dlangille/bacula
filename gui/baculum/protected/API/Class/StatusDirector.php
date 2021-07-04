@@ -80,7 +80,12 @@ class StatusDirector extends ComponentStatusModule {
 	 * @return array array with parsed director status values
 	 */
 	public function parseStatus(array $output, $type) {
-		$result = array();
+		$result = [
+			self::OUTPUT_TYPE_HEADER => [],
+			self::OUTPUT_TYPE_SCHEDULED => [],
+			self::OUTPUT_TYPE_RUNNING => [],
+			self::OUTPUT_TYPE_TERMINATED => []
+		];
 		$type = null;
 		$line = null;
 		$types = array(
