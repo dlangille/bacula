@@ -3343,22 +3343,58 @@ msgid "Configure storage daemon"
 msgstr "Skonfiguruj storage daemon"
 
 msgid "# Directories:"
-msgstr "# Directories:"
+msgstr "# Katalogi:"
 
 msgid "# Files:"
-msgstr "# Files:"
+msgstr "# Pliki:"
 
 msgid "Search..."
-msgstr "Search..."
+msgstr "Szukaj..."
 
 msgid "case sensitive"
-msgstr "case sensitive"
+msgstr "rozróżniaj wielkość liter"
 
 msgid "Backup client"
-msgstr "Backup client"
+msgstr "Klient backupu"
 
 msgid "Job type"
-msgstr "Job type"
+msgstr "Typ zadania"
 
 msgid "Restore time point"
-msgstr "Restore time point"
+msgstr "Punkt przywracania"
+
+msgid "Catalogs"
+msgstr "Katalogi"
+
+msgid "Status director"
+msgstr "Status zarządcy"
+
+msgid "Configure director"
+msgstr "Konfiguruj zarządcę"
+
+msgid "Job"
+msgstr "Zadanie"
+
+msgid "Job status desc.:"
+msgstr "Opis statusu zadania:"
+
+msgid "Scheduled time:"
+msgstr "Zaplanowany czas uruchomienia:"
+
+msgid "Scheduled jobs"
+msgstr "Zaplanowane zadania"
+
+msgid "No jobs scheduled"
+msgstr "Brak zaplanowanych zadań"
+
+msgid "No jobs terminated"
+msgstr "Brak zakończonych zadań"
+
+msgid "Director details"
+msgstr "Szczegóły zarządcy"
+
+msgid "Graphical director status is supported for Bacula directors version 9.0 and greater."
+msgstr "Graficzny status zarządcy jest wspierany od wersji zarządcy Bacula 9.0 i wyższych."
+
+msgid "Status request timed out. The most probably the Bacula director is not available or it is not running."
+msgstr "Upłynął limit czasu żądania statusu. Najprawdopodobniej zarządca Bacula nie jest dostępny lub nie jest uruchomiony."

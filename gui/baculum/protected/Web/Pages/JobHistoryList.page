@@ -173,7 +173,7 @@ var oJobHistoryList = {
 			validate: function(selected) {
 				var running_jobs = [];
 				selected.each(function(v, k) {
-					if (JobStatus.is_running(v.jobstatus)) {
+					if (JobStatus.is_running(v.jobstatus) || JobStatus.is_waiting(v.jobstatus)) {
 						running_jobs.push(' - [' + v.jobid + '] ' + v.name);
 					}
 				});

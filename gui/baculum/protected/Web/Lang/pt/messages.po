@@ -3362,3 +3362,39 @@ msgstr "Job type"
 
 msgid "Restore time point"
 msgstr "Restore time point"
+
+msgid "Catalogs"
+msgstr "Catalogs"
+
+msgid "Status director"
+msgstr "Status director"
+
+msgid "Configure director"
+msgstr "Configure director"
+
+msgid "Job"
+msgstr "Job"
+
+msgid "Job status desc.:"
+msgstr "Job status desc.:"
+
+msgid "Scheduled time:"
+msgstr "Scheduled time:"
+
+msgid "Scheduled jobs"
+msgstr "Scheduled jobs"
+
+msgid "No jobs scheduled"
+msgstr "No jobs scheduled"
+
+msgid "No jobs terminated"
+msgstr "No jobs terminated"
+
+msgid "Director details"
+msgstr "Director details"
+
+msgid "Graphical director status is supported for Bacula directors version 9.0 and greater."
+msgstr "Graphical director status is supported for Bacula directors version 9.0 and greater."
+
+msgid "Status request timed out. The most probably the Bacula director is not available or it is not running."
+msgstr "Status request timed out. The most probably the Bacula director is not available or it is not running."

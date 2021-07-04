@@ -401,7 +401,8 @@ var JobStatus = {
 		warning: ['W'],
 		error: ['E', 'e', 'f', 'I'],
 		cancel: ['A'],
-		running: ['C', 'R']
+		running: ['R'],
+		waiting: ['C']
 	},
 
 	is_ok: function(s) {
@@ -419,14 +420,19 @@ var JobStatus = {
 	is_running: function(s) {
 		return (this.st.running.indexOf(s) !== -1);
 	},
+	is_waiting: function(s) {
+		return (this.st.waiting.indexOf(s) !== -1);
+	},
 	get_icon: function(s) {
 		var css = 'fa ';
 		if (this.is_ok(s)) {
 			css += 'fa-check-square w3-text-green';
 		} else if (this.is_error(s)) {
 			css += 'fa-exclamation-circle w3-text-red';
+		} else if (this.is_waiting(s)) {
+			css += 'fa-hourglass-half w3-text-purple';
 		} else if (this.is_running(s)) {
-			css += 'fa-cogs w3-text-blue';
+			css += 'fa-cog w3-text-blue w3-spin';
 		} else if (this.is_cancel(s)) {
 			css += 'fa-minus-square w3-text-yellow';
 		} else if (this.is_warning(s)) {
@@ -563,6 +569,29 @@ var JobType = {
 			type = 'Unknown';
 		}
 		return type;
+	},
+	get_icon: function(t) {
+		var css = 'fas ';
+		if (t == 'B') {
+			css += 'fa-file-export';
+		} else if (t == 'M' || t == 'g') {
+			css += 'fa-running';
+		} else if (t == 'V') {
+			css += 'fa-tasks';
+		} else if (t == 'R') {
+			css += 'fa-file-import';
+		} else if (t == 'D') {
+			css += 'fa-tools';
+		} else if (t == 'C' || t == 'c') {
+			css += 'fa-copy';
+		} else {
+			css += 'fa-file';
+		}
+		css += ' w3-large';
+		var ret = document.createElement('I');
+		ret.className = css;
+		ret.title = this.get_type(t);
+		return ret;
 	}
 };
 

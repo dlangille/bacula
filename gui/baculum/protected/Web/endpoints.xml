@@ -7,6 +7,7 @@
 	<url ServiceParameter="JobHistoryView" pattern="web/job/history/{jobid}/" parameters.jobid="\d+" />
 	<url ServiceParameter="JobList" pattern="web/job/" />
 	<url ServiceParameter="JobView" pattern="web/job/{job}/" parameters.job="[a-zA-Z0-9:.\-_ ]+" />
+	<url ServiceParameter="DirectorView" pattern="web/director/{director}/" parameters.director="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="StorageList" pattern="web/storage/" />
 	<url ServiceParameter="StorageView" pattern="web/storage/{storageid}/" parameters.storageid="\d+" />
 	<url ServiceParameter="StorageView" pattern="web/storage/{storage}/" parameters.storage="[a-zA-Z0-9:.\-_ ]+" />
