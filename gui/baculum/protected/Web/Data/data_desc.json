@@ -4752,9 +4752,10 @@
 			},
 			"Director": {
 				"Required": false,
-				"ValueType": "str",
+				"ValueType": "res",
 				"DefaultValue": 0,
-				"FieldType": "TextBox",
+				"FieldType": "ComboBox",
+				"Resource": "Director",
 				"Section": "General"
 			},
 			"CommCompression": {

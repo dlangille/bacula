@@ -3398,3 +3398,12 @@ msgstr "Graficzny status zarządcy jest wspierany od wersji zarządcy Bacula 9.0
 
 msgid "Status request timed out. The most probably the Bacula director is not available or it is not running."
 msgstr "Upłynął limit czasu żądania statusu. Najprawdopodobniej zarządca Bacula nie jest dostępny lub nie jest uruchomiony."
+
+msgid "To use the console page please configure bbconsjson binary file path on the API side."
+msgstr "Aby używać tej strony konsoli, proszę skonfigurować po stronie API lokalizację pliku binarnego bbconsjson."
+
+msgid "Console details"
+msgstr "Szczegóły konsoli"
+
+msgid "Configure console"
+msgstr "Konfiguruj konsolę"

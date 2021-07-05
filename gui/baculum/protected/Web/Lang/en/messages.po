@@ -3388,3 +3388,12 @@ msgstr "Graphical director status is supported for Bacula directors version 9.0 
 
 msgid "Status request timed out. The most probably the Bacula director is not available or it is not running."
 msgstr "Status request timed out. The most probably the Bacula director is not available or it is not running."
+
+msgid "To use the console page please configure bbconsjson binary file path on the API side."
+msgstr "To use the console page please configure bbconsjson binary file path on the API side."
+
+msgid "Console details"
+msgstr "Console details"
+
+msgid "Configure console"
+msgstr "Configure console"
