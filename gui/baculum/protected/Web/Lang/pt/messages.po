@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-19 03:07\n"
+"PO-Revision-Date: 2021-07-06 02:31\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -3343,67 +3343,68 @@ msgid "Configure storage daemon"
 msgstr "Configurar daemon de armazenamento"
 
 msgid "# Directories:"
-msgstr "# Directories:"
+msgstr "# Diretórios:"
 
 msgid "# Files:"
-msgstr "# Files:"
+msgstr "# Arquivos:"
 
 msgid "Search..."
-msgstr "Search..."
+msgstr "Procurar..."
 
 msgid "case sensitive"
-msgstr "case sensitive"
+msgstr "maiúsculas e minúsculas"
 
 msgid "Backup client"
-msgstr "Backup client"
+msgstr "Backup do cliente"
 
 msgid "Job type"
-msgstr "Job type"
+msgstr "Tipo do job"
 
 msgid "Restore time point"
-msgstr "Restore time point"
+msgstr "Ponto de restauração"
 
 msgid "Catalogs"
-msgstr "Catalogs"
+msgstr "Catálogos"
 
 msgid "Status director"
-msgstr "Status director"
+msgstr "Status do diretor"
 
 msgid "Configure director"
-msgstr "Configure director"
+msgstr "Configurar diretor"
 
 msgid "Job"
 msgstr "Job"
 
 msgid "Job status desc.:"
-msgstr "Job status desc.:"
+msgstr "Job status:"
 
 msgid "Scheduled time:"
-msgstr "Scheduled time:"
+msgstr "Hora agendada:"
 
 msgid "Scheduled jobs"
-msgstr "Scheduled jobs"
+msgstr "Jobs agendados"
 
 msgid "No jobs scheduled"
-msgstr "No jobs scheduled"
+msgstr "Nenhum job agendado"
 
 msgid "No jobs terminated"
-msgstr "No jobs terminated"
+msgstr "Nenhum job terminado"
 
 msgid "Director details"
-msgstr "Director details"
+msgstr "Detalhes do diretor"
 
 msgid "Graphical director status is supported for Bacula directors version 9.0 and greater."
-msgstr "Graphical director status is supported for Bacula directors version 9.0 and greater."
+msgstr "O status do diretor gráfico é compatível com os diretores Bacula versão 9.0 e superiores."
 
 msgid "Status request timed out. The most probably the Bacula director is not available or it is not running."
-msgstr "Status request timed out. The most probably the Bacula director is not available or it is not running."
+msgstr "A solicitação de status expirou. Provavelmente, o diretor do Bacula não está disponível ou não está funcionando."
 
 msgid "To use the console page please configure bbconsjson binary file path on the API side."
-msgstr "To use the console page please configure bbconsjson binary file path on the API side."
+msgstr "Para usar a página do console, por favor configure o caminho do arquivo binário bbconsjson no lado da API."
 
 msgid "Console details"
-msgstr "Console details"
+msgstr "Detalhes do console"
 
 msgid "Configure console"
-msgstr "Configure console"
+msgstr "Configurar console"
+
