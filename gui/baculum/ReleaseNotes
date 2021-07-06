@@ -1,3 +1,37 @@
+
+                Release Notes for Baculum 11.0.5.2
+
+This is a minor new feature and bug fix release. The main new features for this
+version are: new director page and new console page. Additionally, support for
+PHP 8 has been added. Russian, Portuguese and Polish translations have been
+updated as well.
+
+New changes and fixes:
+
+ Baculum Web:
+ - New director page with graphical/text status and with configure director resources
+ - Add console page to configure consoles
+ - New delete volumes bulk action on volume list page
+ - Fixes to support PHP 8
+ - Reorganize dasboard page - idea proposed by Sergey Zhidkov
+ - Add new columns to job list page - idea proposed by Sergey Zhidkov
+ - Fix missing texts in translation files - reported by Sergey Zhidkov
+ - Fix problem with listing directories in restore wizard - reported by Tomasz Świderski
+ - Set responsive priority for job list table
+ - Update Russian translations
+ - Update Portuguese translations
+ - Update Polish translations
+ - Apply PRADO framework patches to support PHP 8
+ - Remove old configure page
+
+ Baculum API:
+ - Add JSON output parameter to show client(s), show job(s), show pool(s) API endpoints
+ - Add to API deleting volume from the catalog
+ - Add director show command API endpoint
+ - Improve checking director in status director API endpoint
+ - Fix component autochanger schemas in OpenAPI documentation
+
+
                 Release Notes for Baculum 11.0.2.2
 
 This is a minor new feature and bug fix release. The main new feature for
