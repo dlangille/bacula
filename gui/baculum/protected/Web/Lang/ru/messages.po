@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-07-04 19:53\n"
+"PO-Revision-Date: 2021-07-06 02:24\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -1846,10 +1846,10 @@ msgid "Step 5 - when would you like to run backup"
 msgstr "Шаг 5 - когда вы хотите запустить резервное копирование"
 
 msgid "Show Reschedule directives"
-msgstr ""
+msgstr "Показать перепланированные директивы"
 
 msgid "Reschedule setting"
-msgstr ""
+msgstr "Перепланирование настроек"
 
 msgid "What"
 msgstr "Что"
@@ -2545,16 +2545,16 @@ msgid "Vol. blocks"
 msgstr "Блоки Vol."
 
 msgid "Vol. abytes"
-msgstr ""
+msgstr "Том abytes"
 
 msgid "Vol. apadding"
-msgstr ""
+msgstr "Добавить том"
 
 msgid "Vol. hole bytes"
-msgstr ""
+msgstr "Vol. hole bytes"
 
 msgid "Vol. holes"
-msgstr ""
+msgstr "Vol. holes"
 
 msgid "Vol. parts"
 msgstr "Части Vol."
@@ -2569,7 +2569,7 @@ msgid "Storage"
 msgstr "Хранилище"
 
 msgid "Media addressing"
-msgstr ""
+msgstr "Media addressing"
 
 msgid "Vol. read time"
 msgstr "Vol. времени чтения"
@@ -2590,7 +2590,7 @@ msgid "Vol. type"
 msgstr "Тип Vol."
 
 msgid "Vol. cloud parts"
-msgstr ""
+msgstr "Том часть облака"
 
 msgid "Last part bytes"
 msgstr "Последняя часть байт"
@@ -3289,7 +3289,7 @@ msgid "Destination slot"
 msgstr "Слот назначения"
 
 msgid "Release import/export slot"
-msgstr ""
+msgstr "Переместить в слот для импорта/экспорта"
 
 msgid "Tape drives"
 msgstr "Ленточные накопители"
@@ -3343,67 +3343,68 @@ msgid "Configure storage daemon"
 msgstr "Настроить демон хранения"
 
 msgid "# Directories:"
-msgstr "# Directories:"
+msgstr "# Каталоги:"
 
 msgid "# Files:"
-msgstr "# Files:"
+msgstr "# Файлов:"
 
 msgid "Search..."
-msgstr "Search..."
+msgstr "Поиск..."
 
 msgid "case sensitive"
-msgstr "case sensitive"
+msgstr "учитывать регистр"
 
 msgid "Backup client"
-msgstr "Backup client"
+msgstr "Резервная копия клиента"
 
 msgid "Job type"
-msgstr "Job type"
+msgstr "Тип задания"
 
 msgid "Restore time point"
-msgstr "Restore time point"
+msgstr "Восстановить на момент времени"
 
 msgid "Catalogs"
-msgstr "Catalogs"
+msgstr "Каталоги"
 
 msgid "Status director"
-msgstr "Status director"
+msgstr "Статус директора"
 
 msgid "Configure director"
-msgstr "Configure director"
+msgstr "Настройка директора"
 
 msgid "Job"
-msgstr "Job"
+msgstr "Задание"
 
 msgid "Job status desc.:"
-msgstr "Job status desc.:"
+msgstr "Описание статуса задания:"
 
 msgid "Scheduled time:"
-msgstr "Scheduled time:"
+msgstr "Назначенное время:"
 
 msgid "Scheduled jobs"
-msgstr "Scheduled jobs"
+msgstr "Запланированные задания"
 
 msgid "No jobs scheduled"
-msgstr "No jobs scheduled"
+msgstr "Нет запланированных заданий"
 
 msgid "No jobs terminated"
-msgstr "No jobs terminated"
+msgstr "Нет прекращенных заданий"
 
 msgid "Director details"
-msgstr "Director details"
+msgstr "Директор подробно"
 
 msgid "Graphical director status is supported for Bacula directors version 9.0 and greater."
-msgstr "Graphical director status is supported for Bacula directors version 9.0 and greater."
+msgstr "Графический статус клиента поддерживается для клиентов Bacula версии 9.0 и выше."
 
 msgid "Status request timed out. The most probably the Bacula director is not available or it is not running."
-msgstr "Status request timed out. The most probably the Bacula director is not available or it is not running."
+msgstr "Истекло время ожидания запроса. Вероятно, клиент Bacula не доступен или не запущен."
 
 msgid "To use the console page please configure bbconsjson binary file path on the API side."
-msgstr "To use the console page please configure bbconsjson binary file path on the API side."
+msgstr "Чтобы использовать страницу консоли, настройте путь к бинарным файлам bbconsjson на стороне API."
 
 msgid "Console details"
-msgstr "Console details"
+msgstr "Детали консоли"
 
 msgid "Configure console"
-msgstr "Configure console"
+msgstr "Настройка консоли"
+
