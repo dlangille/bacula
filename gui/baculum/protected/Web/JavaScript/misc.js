@@ -775,8 +775,15 @@ var oLastJobsList = {
 	set_events: function() {
 		var self = this;
 		$('#' + this.ids.last_jobs_list + ' tbody').on('click', 'tr', function (e) {
-			var data = self.last_jobs_table.row(this).data();
-			document.location.href = '/web/job/history/' + data.jobid + '/'
+			var td = e.target;
+			if (td.nodeName != 'TD') {
+				td = $(td).closest('td');
+			}
+			// first cell should not be clickable, it contains the button to open row details
+			if ($(td).index() > 0) {
+				var data = self.last_jobs_table.row(this).data();
+				document.location.href = '/web/job/history/' + data.jobid + '/'
+			}
 		});
 	}
 };
