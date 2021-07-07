@@ -2112,7 +2112,7 @@
 				"Section": "General"
 			},
 			"Type": {
-				"Required": true,
+				"Required": false,
 				"ValueType": "jobtype",
 				"DefaultValue": 0,
 				"FieldType": "ComboBox",
@@ -2128,7 +2128,7 @@
 				"Section": "General"
 			},
 			"Client": {
-				"Required": true,
+				"Required": false,
 				"ValueType": "res",
 				"DefaultValue": 0,
 				"FieldType": "ComboBox",
@@ -2136,7 +2136,7 @@
 				"Section": "General"
 			},
 			"Fileset": {
-				"Required": true,
+				"Required": false,
 				"ValueType": "res",
 				"DefaultValue": 0,
 				"FieldType": "ComboBox",
@@ -2144,21 +2144,21 @@
 				"Section": "General"
 			},
 			"Pool": {
-				"Required": true,
+				"Required": false,
 				"ValueType": "res",
 				"DefaultValue": 0,
 				"FieldType": "ComboBox",
 				"Section": "General"
 			},
 			"Storage": {
-				"Required": true,
+				"Required": false,
 				"ValueType": "alist_res",
 				"DefaultValue": 0,
 				"FieldType": "ComboBox",
 				"Section": "General"
 			},
 			"Messages": {
-				"Required": true,
+				"Required": false,
 				"ValueType": "res",
 				"DefaultValue": 0,
 				"FieldType": "ComboBox",
