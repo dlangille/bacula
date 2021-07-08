@@ -6,6 +6,7 @@
 #jobs_summary_graph {
 	height: 380px;
 	z-index: 0;
+	cursor: pointer;
 }
 
 .monospace {

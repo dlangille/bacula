@@ -189,7 +189,8 @@ var oJobHistoryList = {
 	],
 	ids: {
 		job_list: 'job_list',
-		job_list_body: 'job_list_body'
+		job_list_body: 'job_list_body',
+		table_mode: 'table_mode'
 	},
 	data: [],
 	table: null,
@@ -201,6 +202,7 @@ var oJobHistoryList = {
 			this.set_table();
 			this.set_bulk_actions();
 			this.set_events();
+			this.set_filters();
 		}
 	},
 	set_events: function() {
@@ -221,7 +223,7 @@ var oJobHistoryList = {
 		this.table = $('#' + this.ids.job_list).DataTable({
 			data: this.data,
 			deferRender: true,
-			dom: 'lB<"table_toolbar">frtip',
+			dom: 'lB<"table_toolbar"><"#table_mode">frtip',
 			stateSave: true,
 			buttons: [
 				'copy', 'csv', 'colvis'
@@ -439,7 +441,7 @@ var oJobHistoryList = {
 						.search(val ? '^' + val + '$' : '', true, false)
 						.draw();
 					});
-					if (column[0][0] == 14) {
+					if (column[0][0] == 14) { // NOTE: this column is used also in filters (@see oJobHistoryList.set_mode())
 						column.data().unique().sort().each(function (d, j) {
 							if (column.search() == '^' + dtEscapeRegex(d) + '$') {
 								select.append('<option value="' + d + '" title="' + JobStatus.get_desc(d) + '" selected>' + d + '</option>');
@@ -465,6 +467,80 @@ var oJobHistoryList = {
 			actions: '<%[ Actions ]%>',
 			ok: '<%[ OK ]%>'
 		});
+	},
+	set_mode: function(type) {
+		var types = {
+			ok: '<%[ Jobs terminated normally ]%>',
+			warning: '<%[ Jobs with warning ]%>',
+			error: '<%[ Jobs finished with error ]%>',
+			running: '<%[ Jobs running ]%>',
+			cancel: '<%[ Jobs canceled ]%>'
+		}
+		var container = document.getElementById(this.ids.table_mode);
+		var mode = document.createTextNode(' <%[ Mode: ]%> ' + types[type] + ' ');
+		container.appendChild(mode);
+		var label = document.createTextNode(' <%[ Reset table mode ]%>');
+		var a = document.createElement('A');
+		a.className = 'w3-button w3-green';
+		a.href = 'javascript:void(0)';
+		a.addEventListener('click', function(e) {
+			$.fn.dataTable.ext.search.pop();
+			this.table.columns().search('').draw();
+			container.style.display = 'none';
+		}.bind(this));
+		var img = document.createElement('I');
+		img.className = 'fas fa-sync-alt';
+		a.appendChild(img);
+		a.appendChild(label);
+		container.appendChild(a);
+	},
+	set_filters: function() {
+		var jss = '';
+		var type = get_url_param('type');
+		var search_func;
+		switch (type) {
+			case 'ok':
+				search_func = function(settings, search_data, index, row_data, counter) {
+					var jobstatus = search_data[14];
+					var joberrors = search_data[18];
+					return (JobStatus.is_ok(jobstatus) && joberrors == 0);
+				};
+			break;
+			case 'error':
+				search_func = function(settings, search_data, index, row_data, counter) {
+					var jobstatus = search_data[14];
+					return JobStatus.is_error(jobstatus);
+				};
+			break;
+			case 'warning':
+				search_func = function(settings, search_data, index, row_data, counter) {
+					var jobstatus = search_data[14];
+					var joberrors = search_data[18];
+					return ((JobStatus.is_ok(jobstatus) && joberrors > 0) || JobStatus.is_warning(jobstatus));
+				};
+			break;
+			case 'cancel':
+				search_func = function(settings, search_data, index, row_data, counter) {
+					var jobstatus = search_data[14];
+					return JobStatus.is_cancel(jobstatus);
+				};
+			break;
+			case 'running':
+				search_func = function(settings, search_data, index, row_data, counter) {
+					var jobstatus = search_data[14];
+					return (JobStatus.is_running(jobstatus) || JobStatus.is_waiting(jobstatus));
+				};
+			break;
+		}
+		var container = document.getElementById(this.ids.table_mode);
+		if (search_func) {
+			$.fn.dataTable.ext.search.push(search_func);
+			this.table.columns().search('').draw();
+			this.set_mode(type);
+			container.style.display = '';
+		} else {
+			container.style.display = 'none';
+		}
 	}
 };
 MonitorParams = {jobs: null};

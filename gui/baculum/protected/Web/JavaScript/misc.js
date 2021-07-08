@@ -251,6 +251,23 @@ var PieGraph  = {
 	},
 	pie_track_formatter: function(e) {
 		return e.series.label;
+	},
+	pie_legend_formatter: function(label) {
+		var type = label.split(' ')[0];
+		var a = document.createElement('A');
+		a.href = this.get_addr_by_type(type);
+		a.className = 'raw';
+		text = document.createTextNode(label);
+		a.appendChild(text);
+		return a.outerHTML;
+	},
+	pie_mouse_handler: function(e) {
+		var type = e.hit.series.label.split(' ')[0];
+		window.location.href = this.get_addr_by_type(type);
+		return false;
+	},
+	get_addr_by_type: function(type) {
+		return '/web/job/history/?type=' + type;
 	}
 }
 
@@ -792,6 +809,7 @@ var Dashboard = {
 	stats: null,
 	txt: null,
 	pie: null,
+	txt: null,
 	noval: '-',
 	ids: {
 		clients: {
@@ -817,13 +835,19 @@ var Dashboard = {
 			most: 'pool_most',
 			jobs: 'pool_jobs'
 		},
-		pie_summary: 'jobs_summary_graph'
+		pie_summary: {
+			container_id: 'jobs_summary_graph',
+			legend_container_id: 'jobs_summary_legend'
+		}
 	},
 	last_jobs_table: null,
 	dbtype: {
 		pgsql: 'PostgreSQL',
 		mysql: 'MySQL',
 		sqlite: 'SQLite'
+	},
+	set_text: function(txt) {
+		this.txt = txt;
 	},
 	update_all: function(statistics) {
 		this.stats = statistics;
@@ -912,11 +936,13 @@ var Dashboard = {
 	},
 	update_pie_jobstatus: function() {
 		if (this.pie != null) {
-			this.pie.pie.destroy();
+			this.pie.destroy();
 		}
 		this.pie = new GraphPieClass({
 			jobs: this.stats.jobs_summary,
-			container_id: this.ids.pie_summary
+			container_id: this.ids.pie_summary.container_id,
+			legend_container_id: this.ids.pie_summary.legend_container_id,
+			title: this.txt.js_sum_title
 		});
 	}
 };

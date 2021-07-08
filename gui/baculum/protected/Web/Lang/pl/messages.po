@@ -3407,3 +3407,24 @@ msgstr "Szczegóły konsoli"
 
 msgid "Configure console"
 msgstr "Konfiguruj konsolę"
+
+msgid "Mode:"
+msgstr "Tryb:"
+
+msgid "Reset table mode"
+msgstr "Resetuj tryb tabeli"
+
+msgid "Jobs terminated normally"
+msgstr "Zadania zakończone normalnie"
+
+msgid "Jobs with warning"
+msgstr "Zadania z ostrzeżeniami"
+
+msgid "Jobs finished with error"
+msgstr "Zadania zakończone z błędem"
+
+msgid "Jobs running"
+msgstr "Zadania uruchomione"
+
+msgid "Jobs canceled"
+msgstr "Zadania anulowane"

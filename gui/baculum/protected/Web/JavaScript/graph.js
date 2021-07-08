@@ -1247,7 +1247,7 @@ var GraphPieClass = jQuery.klass({
 			outlineWidth: 0,
 			color: 'black'
 		},
-		xaxis: { showLabels : false,},
+		xaxis: { showLabels : false },
 		yaxis: { showLabels : false },
 		pie: {
 			show : true,
@@ -1263,15 +1263,18 @@ var GraphPieClass = jQuery.klass({
 			position : 'sw'
 		},
 		legend: {
+			noColumns: 3,
 			position : 'se',
 			backgroundColor : '#D2E8FF',
-			margin: 0
+			margin: 0,
+			labelFormatter: PieGraph.pie_legend_formatter.bind(PieGraph)
 		}
 	},
 	initialize: function(prop) {
 		this.jobs = prop.jobs;
 		this.title = prop.hasOwnProperty('title') ? prop.title : null;
 		this.container = document.getElementById(prop.container_id);
+		this.legend_container = prop.hasOwnProperty('legend_container_id') ? $('#' + prop.legend_container_id) : null;
 		this.series = this.prepare_series();
 		this.draw_grah();
 	},
@@ -1299,7 +1302,15 @@ var GraphPieClass = jQuery.klass({
 		if (this.title) {
 			graph_options.title = this.title;
 		}
+		if (this.legend_container) {
+			graph_options.legend.container = this.legend_container;
+		}
 		this.pie = Flotr.draw(this.container, this.series, graph_options);
+		Flotr.EventAdapter.observe(this.container, 'flotr:click', PieGraph.pie_mouse_handler.bind(PieGraph));
+	},
+	destroy: function() {
+		Flotr.EventAdapter.stopObserving(this.container, 'flotr:click');
+		this.pie.destroy();
 	}
 });
 

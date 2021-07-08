@@ -3399,6 +3399,26 @@ msgstr "Графический статус клиента поддержива�
 msgid "Status request timed out. The most probably the Bacula director is not available or it is not running."
 msgstr "Истекло время ожидания запроса. Вероятно, клиент Bacula не доступен или не запущен."
 
+msgid "Mode:"
+msgstr "Mode:"
+
+msgid "Reset table mode"
+msgstr "Reset table mode"
+
+msgid "Jobs terminated normally"
+msgstr "Jobs terminated normally"
+
+msgid "Jobs with warning"
+msgstr "Jobs with warning"
+
+msgid "Jobs finished with error"
+msgstr "Jobs finished with error"
+
+msgid "Jobs running"
+msgstr "Jobs running"
+
+msgid "Jobs canceled"
+msgstr "Jobs canceled"
 msgid "To use the console page please configure bbconsjson binary file path on the API side."
 msgstr "Чтобы использовать страницу консоли, настройте путь к бинарным файлам bbconsjson на стороне API."
 

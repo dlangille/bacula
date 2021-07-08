@@ -113,6 +113,9 @@ $(function() {
 				oData = response;
 				if ('<%=get_class($this->Service->getRequestedPage())%>' == 'Dashboard') {
 					Statistics.grab_statistics(oData, JobStatus.get_states());
+					Dashboard.set_text({
+						js_sum_title: '<%[ Job status summary ]%>'
+					});
 					Dashboard.update_all(Statistics);
 				}
 

@@ -63,9 +63,9 @@
 	<div class="w3-panel">
 		<div class="w3-row-padding" style="margin:0 -16px">
 			<div class="w3-third">
-				<h5><%[ Job status summary ]%></h5>
 				<div class="dashboard_graph">
 					<div id="jobs_summary_graph"></div>
+					<div id="jobs_summary_legend"></div>
 				</div>
 				<div class="w3-card-4 w3-padding-16 w3-margin-top w3-margin-bottom">
 					<header class="w3-container w3-light-grey w3-half w3-left">

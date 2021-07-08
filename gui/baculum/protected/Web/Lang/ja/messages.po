@@ -3483,3 +3483,24 @@ msgstr "Console details"
 
 msgid "Configure console"
 msgstr "Configure console"
+
+msgid "Mode:"
+msgstr "Mode:"
+
+msgid "Reset table mode"
+msgstr "Reset table mode"
+
+msgid "Jobs terminated normally"
+msgstr "Jobs terminated normally"
+
+msgid "Jobs with warning"
+msgstr "Jobs with warning"
+
+msgid "Jobs finished with error"
+msgstr "Jobs finished with error"
+
+msgid "Jobs running"
+msgstr "Jobs running"
+
+msgid "Jobs canceled"
+msgstr "Jobs canceled"
