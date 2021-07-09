@@ -61,102 +61,16 @@
 			</div>
 		</com:TForm>
 		<div id="small" class="w3-hide-large"></div>
-		<div id="error_message_box" class="w3-modal" style="display: none">
-			<div class="w3-modal-content w3-card-4 w3-animate-zoom" style="width:600px">
-				<header class="w3-container w3-red">
-					<span onclick="document.getElementById('error_message_box').style.display='none'" class="w3-button w3-display-topright">×</span>
-					<h2><%[ Error ]%></h2>
-				</header>
-				<div class="w3-panel w3-padding">
-					<p><strong><%[ Error code: ]%></strong> <span id="error_message_error_code"></span></p>
-					<p><strong><%[ Message: ]%></strong> <span id="error_message_error_msg"></span></p>
-				</div>
-				<footer class="w3-container w3-center">
-					<button type="button" class="w3-button w3-section w3-red" onclick="document.getElementById('error_message_box').style.display='none'"><i class="fa fa-check"></i> &nbsp;<%[ OK ]%></button>
-				</footer>
-			</div>
-		</div>
-<script type="text/javascript">
+<com:Application.Web.Portlets.ErrorMessageBox />
+<com:Application.Web.Portlets.ResourceMonitor />
+<com:Application.Web.Portlets.MsgEnvelope Visible="<%=$this->User->isInRole(WebUserRoles::ADMIN)%>" />
+<script>
 var is_small = $('#small').is(':visible');
-
-var oMonitor;
-var default_refresh_interval = 60000;
-var default_fast_refresh_interval = 10000;
-var timeout_handler;
-var last_callback_time = 0;
-var callback_time_offset = 0;
-var oData;
-var MonitorCalls = [];
-var MonitorCallsInterval = [];
 $(function() {
 	if (is_small) {
 		W3SideBar.close();
 	}
-	oMonitor = function() {
-		return $.ajax('<%=$this->Service->constructUrl("Monitor")%>', {
-			dataType: 'json',
-			type: 'post',
-			data: {
-				'params': (typeof(MonitorParams) == 'object' ? MonitorParams : []),
-				'use_limit' : <%=$this->Service->getRequestedPagePath() == "Dashboard" ? '0' : '1'%>,
-			},
-			beforeSend: function() {
-				last_callback_time = new Date().getTime();
-			},
-			success: function(response) {
-				if (timeout_handler) {
-					clearTimeout(timeout_handler);
-				}
-				if (response && response.hasOwnProperty('error') && response.error.error !== 0) {
-					show_error(response.error.output, response.error.error);
-				}
-
-				oData = response;
-				if ('<%=get_class($this->Service->getRequestedPage())%>' == 'Dashboard') {
-					Statistics.grab_statistics(oData, JobStatus.get_states());
-					Dashboard.set_text({
-						js_sum_title: '<%[ Job status summary ]%>'
-					});
-					Dashboard.update_all(Statistics);
-				}
-
-				if (oData.running_jobs.length > 0) {
-					refreshInterval =  callback_time_offset + default_fast_refresh_interval;
-				} else {
-					refreshInterval = default_refresh_interval;
-				}
-				if (typeof(job_callback_func) == 'function') {
-					job_callback_func();
-				}
-				document.getElementById('running_jobs').textContent = oData.running_jobs.length;
-				timeout_handler = setTimeout("oMonitor()", refreshInterval);
-
-				var calls_len = MonitorCalls.length;
-				for (var i = 0; i < calls_len; i++) {
-					MonitorCalls[i]();
-				}
-				var calls_interval_len = MonitorCallsInterval.length;
-				for (var i = 0; i < calls_interval_len; i++) {
-					MonitorCallsInterval[i]();
-				}
-				if (calls_len > 0) {
-					Formatters.set_formatters();
-				}
-				MonitorCalls = [];
-			}
-		});
-	};
-	oMonitor();
 });
-function show_error(output, error) {
-	var err_box = document.getElementById('error_message_box');
-	var err_code = document.getElementById('error_message_error_code');
-	var err_msg = document.getElementById('error_message_error_msg');
-	err_code.textContent = error;
-	err_msg.innerHTML = output;
-	err_box.style.display = 'block';
-}
-	</script>
-	<com:Application.Web.Portlets.MsgEnvelope Visible="<%=$this->User->isInRole(WebUserRoles::ADMIN)%>" />
+</script>
 	</body>
 </html>
