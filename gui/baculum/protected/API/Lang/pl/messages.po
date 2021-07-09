@@ -644,3 +644,38 @@ msgstr "Test komendy zmieniarki:"
 msgid "Changer command error"
 msgstr "Błąd komendy zmieniarki"
 
+msgid "Copy"
+msgstr "Kopiuj"
+
+msgid "Column visibility"
+msgstr "Widoczność kolumn"
+
+msgid "1 row selected"
+msgstr "Wybrano 1 wiersz"
+
+msgid "%d rows selected"
+msgstr "Wybrano %d wierszy"
+
+msgid "Show _MENU_ entries"
+msgstr "Pokaż _MENU_ wierszy"
+
+msgid "Showing _START_ to _END_ of _TOTAL_ entries"
+msgstr "Wiersze od _START_ do _END_ z _TOTAL_"
+
+msgid "First"
+msgstr "Pierwsza"
+
+msgid "Last"
+msgstr "Ostatnia"
+
+msgid "No matching records found"
+msgstr "Nie znaleziono pasujących wierszy"
+
+msgid "filtered from _MAX_ total entries"
+msgstr "odfiltrowane z _MAX_ wszystkich wierszy"
+
+msgid "No data available in table"
+msgstr "Brak dostępnych danych w tabeli"
+
+msgid "Search:"
+msgstr "Szukaj:"

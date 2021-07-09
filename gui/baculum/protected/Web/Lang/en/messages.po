@@ -3418,3 +3418,36 @@ msgstr "Jobs running"
 
 msgid "Jobs canceled"
 msgstr "Jobs canceled"
+
+msgid "Copy"
+msgstr "Copy"
+
+msgid "Column visibility"
+msgstr "Column visibility"
+
+msgid "1 row selected"
+msgstr "1 row selected"
+
+msgid "%d rows selected"
+msgstr "%d rows selected"
+
+msgid "Show _MENU_ entries"
+msgstr "Show _MENU_ entries"
+
+msgid "Showing _START_ to _END_ of _TOTAL_ entries"
+msgstr "Showing _START_ to _END_ of _TOTAL_ entries"
+
+msgid "First"
+msgstr "First"
+
+msgid "Last"
+msgstr "Last"
+
+msgid "No matching records found"
+msgstr "No matching records found"
+
+msgid "filtered from _MAX_ total entries"
+msgstr "filtered from _MAX_ total entries"
+
+msgid "No data available in table"
+msgstr "No data available in table"

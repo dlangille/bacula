@@ -24,6 +24,7 @@
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/tooltip.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/misc.js %> />
 			<com:BClientScript ScriptUrl=<%~ ../JavaScript/bacula-config.js %> />
+			<com:Application.Common.Portlets.TableDefaults />
 			<!-- Top container -->
 				<com:TContentPlaceHolder ID="Wizard" />
 		</com:TForm>
