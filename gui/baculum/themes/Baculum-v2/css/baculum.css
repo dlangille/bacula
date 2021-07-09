@@ -4,7 +4,8 @@
 }
 
 #jobs_summary_graph {
-	height: 380px;
+	height: 310px;
+	max-width: 800px;
 	z-index: 0;
 	cursor: pointer;
 }
@@ -405,7 +406,7 @@ table.component td:nth-of-type(1) {
 }
 
 .usage_box {
-	height: 78px;
+	height: 79px;
 	-webkit-transition: height 0.3s; /* For Safari 3.1 to 6.0 */
 	transition: height 0.3s;
 }
@@ -414,8 +415,13 @@ table.component td:nth-of-type(1) {
 	height: 140px;
 }
 
+.usage_box h5 {
+	margin-top: 5px;
+	margin-left: 47px;
+}
+
 .usage_box h4 {
-	margin-left: 78px;
+	margin-top: 3px;
 }
 
 .info {

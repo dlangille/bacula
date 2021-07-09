@@ -8,12 +8,12 @@
 	</header>
 	<div class="w3-row-padding w3-margin-bottom">
 		<div class="w3-quarter">
-			<div class="w3-container w3-card-4 w3-red w3-padding-16 w3-tooltip w3-animate-top usage_box">
-				<div class="w3-left"><i class="fa fa-desktop w3-xxxlarge"></i></div>
+			<div class="w3-container w3-card-4 w3-red w3-padding-24 w3-tooltip w3-animate-top usage_box">
+				<div class="w3-left"><i class="fa fa-desktop w3-xxlarge w3-margin-right"></i></div>
 				<div class="w3-right">
-					<h3 id="client_no">-</h3>
+					<h4 id="client_no">-</h4>
 				</div>
-				<h4><%[ Clients ]%></h4>
+				<h5><%[ Clients ]%></h5>
 				<div class="w3-text">
 					<p class="w3-small"><%[ The most often used: ]%> <strong><span id="client_most"></span></strong></p>
 					<p class="w3-small"><%[ Job count the most used: ]%> <strong><span id="client_jobs"></span> <%[ jobs ]%></strong></p>
@@ -22,12 +22,12 @@
 			</div>
 		</div>
 		<div class="w3-quarter">
-			<div class="w3-container w3-card-4 w3-blue w3-padding-16 w3-tooltip w3-animate-top usage_box">
-				<div class="w3-left"><i class="fa fa-tasks w3-xxxlarge"></i></div>
+			<div class="w3-container w3-card-4 w3-blue w3-padding-24 w3-tooltip w3-animate-top usage_box">
+				<div class="w3-left"><i class="fa fa-tasks w3-xxlarge w3-margin-right"></i></div>
 				<div class="w3-right">
-					<h3 id="job_no">-</h3>
+					<h4 id="job_no">-</h4>
 				</div>
-				<h4><%[ Finished jobs ]%></h4>
+				<h5><%[ Finished jobs ]%></h5>
 				<div class="w3-text">
 					<p class="w3-small"><%[ The most often used: ]%> <strong><span id="job_most"></span></strong></p>
 					<p class="w3-small"><%[ Execution count most used: ]%> <strong><span id="job_most_count"></span> <%[ times ]%></strong></p>
@@ -35,12 +35,12 @@
 			</div>
 		</div>
 		<div class="w3-quarter">
-			<div class="w3-container w3-card-4 w3-teal w3-padding-16 w3-tooltip w3-animate-top usage_box">
-				<div class="w3-left"><i class="fa fa-tape w3-xxxlarge"></i></div>
+			<div class="w3-container w3-card-4 w3-teal w3-padding-24 w3-tooltip w3-animate-top usage_box">
+				<div class="w3-left"><i class="fa fa-tape w3-xxlarge w3-margin-right"></i></div>
 				<div class="w3-right">
-					<h3 id="pool_no">-</h3>
+					<h4 id="pool_no">-</h4>
 				</div>
-				<h4><%[ Pools ]%></h4>
+				<h5><%[ Pools ]%></h5>
 				<div class="w3-text">
 					<p class="w3-small"><%[ The most often used: ]%> <strong><span id="pool_most"></span></strong></p>
 					<p class="w3-small"><%[ Job count the most used: ]%> <strong><span id="pool_jobs"></span> <%[ jobs ]%></strong></p>
@@ -48,12 +48,12 @@
 			</div>
 		</div>
 		<div class="w3-quarter">
-			<div class="w3-container w3-card-4 w3-orange w3-text-white w3-padding-16 w3-tooltip w3-animate-top usage_box">
-				<div class="w3-left"><i class="fa fa-copy w3-xxxlarge"></i></div>
+			<div class="w3-container w3-card-4 w3-orange w3-text-white w3-padding-24 w3-tooltip w3-animate-top usage_box">
+				<div class="w3-left"><i class="fa fa-copy w3-xxlarge w3-margin-right"></i></div>
 				<div class="w3-right">
-					<h3 id="jobs_total_bytes">-</h3>
+					<h4 id="jobs_total_bytes">-</h4>
 				</div>
-				<h4><%[ Total bytes ]%></h4>
+				<h5><%[ Total bytes ]%></h5>
 				<div class="w3-text">
 					<p><%[ Total files: ]%><strong><span id="jobs_total_files"></span></strong></p>
 				</div>
@@ -62,7 +62,7 @@
 	</div>
 	<div class="w3-panel">
 		<div class="w3-row-padding" style="margin:0 -16px">
-			<div class="w3-third">
+			<div class="w3-quarter">
 				<div class="dashboard_graph">
 					<div id="jobs_summary_graph"></div>
 					<div id="jobs_summary_legend"></div>
@@ -73,7 +73,7 @@
 					</header>
 					<div class="w3-container w3-half w3-left">
 						<div class="w3-padding-small"><%[ Database type: ]%> <span id="database_type"></span></div>
-						<div class="w3-padding-small"><%[ Database size: ]%> <span id="database_size"></span></div>
+						<div class="w3-padding-small"><%[ Database size: ]%> &nbsp;<span id="database_size"></span></div>
 					</div>
 					<div class="w3-clear"></div>
 				</div>
@@ -93,7 +93,7 @@
 				</a>
 				<com:Application.Web.Portlets.RunJob ID="RunJobModal" />
 			</div>
-			<div class="w3-twothird">
+			<div class="w3-threequarter">
 				<table id="last_jobs_list" class="w3-table w3-striped w3-hoverable w3-white w3-margin-bottom" style="width: 100%">
 					<thead>
 						<tr>
