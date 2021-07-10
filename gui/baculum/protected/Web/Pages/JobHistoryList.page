@@ -485,6 +485,16 @@ var oJobHistoryList = {
 		a.href = 'javascript:void(0)';
 		a.addEventListener('click', function(e) {
 			$.fn.dataTable.ext.search.pop();
+
+			// reset select filters
+			this.table.columns().every(function() {
+				var select = this.footer().querySelector('SELECT');
+				if (select) {
+					select.value = '';
+					$(select).trigger('change');
+				}
+			})
+
 			this.table.columns().search('').draw();
 			container.style.display = 'none';
 		}.bind(this));
@@ -536,6 +546,13 @@ var oJobHistoryList = {
 		if (search_func) {
 			$.fn.dataTable.ext.search.push(search_func);
 			this.table.columns().search('').draw();
+			var job = get_url_param('job');
+			if (job) {
+				// set job filter
+				var select = this.table.column(2).footer().querySelector('SELECT');
+				select.value = job;
+				$(select).trigger('change');
+			}
 			this.set_mode(type);
 			container.style.display = '';
 		} else {

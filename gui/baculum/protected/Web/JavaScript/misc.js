@@ -267,7 +267,14 @@ var PieGraph  = {
 		return false;
 	},
 	get_addr_by_type: function(type) {
-		return '/web/job/history/?type=' + type;
+		var job_regexp = new RegExp('/job/([^/?]+)/?');
+		var path = decodeURIComponent(window.location.pathname);
+		var result = job_regexp.exec(path);
+		var job = '';
+		if (result) {
+			job = '&job=' + result[1];
+		}
+		return '/web/job/history/?type=' + type + job;
 	}
 }
 
