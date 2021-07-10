@@ -3461,3 +3461,12 @@ msgstr "filtered from _MAX_ total entries"
 
 msgid "No data available in table"
 msgstr "No data available in table"
+
+msgid "Jump to:"
+msgstr "Jump to:"
+
+msgid "Previous error/warning"
+msgstr "Previous error/warning"
+
+msgid "Next error/warning"
+msgstr "Next error/warning"

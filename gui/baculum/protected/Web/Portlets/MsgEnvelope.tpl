@@ -5,8 +5,14 @@
 			<h2><%[ Messages ]%></h2>
 		</header>
 		<div class="w3-container w3-margin-left w3-margin-right">
-			<div id="msg_envelope_container" class="w3-code" style="font-size: 12px; min-height: 50px; max-height: 610px; overflow-y: scroll; overflow-x: auto;">
+			<div id="msg_envelope_container" class="w3-code" style="font-size: 12px; min-height: 50px; max-height: 610px; overflow-y: scroll; overflow-x: auto; position: relative;">
 				<pre id="msg_envelope_content"></pre>
+				<div id="msg_envelope_line_indicator" style="position: absolute; display: none;"><i class="fas fa-arrow-right w3-text-red"></i></div>
+			</div>
+			<div id="msg_envelope_nav">
+				<span><%[ Jump to: ]%></span> &nbsp;
+				<i id="msg_envelope_nav_down" class="fas fa-angle-down w3-large" style="cursor: pointer; user-select: none;" title="<%[ Previous error/warning ]%>"></i> &nbsp;
+				<i id="msg_envelope_nav_up" class="fas fa-angle-up w3-large" style="cursor: pointer; user-select: none;" title="<%[ Next error/warning ]%>"></i>
 			</div>
 		</div>
 		<footer class="w3-container w3-center">

@@ -952,8 +952,16 @@ var MsgEnvelope = {
 		envelope: 'msg_envelope',
 		modal: 'msg_envelope_modal',
 		container: 'msg_envelope_container',
-		content: 'msg_envelope_content'
+		content: 'msg_envelope_content',
+		nav: 'msg_envelope_nav',
+		nav_down: 'msg_envelope_nav_down',
+		nav_up: 'msg_envelope_nav_up',
+		line_indicator: 'msg_envelope_line_indicator'
 	},
+	css: {
+		wrong: 'span[rel="wrong"]'
+	},
+	warn_err_idx: -1,
 	issue_regex: { // @TODO: add more regexes
 		warning: [
 			/Cannot find any appendable volumes/i,
@@ -971,11 +979,68 @@ var MsgEnvelope = {
 		this.set_actions();
 	},
 	set_events: function() {
+		var container = document.getElementById(this.ids.container);
+		var cont = $(container);
 		document.getElementById(this.ids.envelope).addEventListener('click', function(e) {
 			this.open();
-			var container = document.getElementById(this.ids.container);
 			// set scroll to the bottom
 			container.scrollTop = container.scrollHeight;
+		}.bind(this));
+
+		var content = document.getElementById(this.ids.content);
+		document.getElementById(this.ids.nav_up).addEventListener('click', function(e) {
+			var warn_err = content.querySelectorAll(this.css.wrong);
+			var next;
+			if (this.warn_err_idx < 0) {
+				if (warn_err.length > 0) {
+					this.warn_err_idx = warn_err.length - 1;
+					next = $(warn_err[this.warn_err_idx]);
+				}
+			} else if ((warn_err.length - 1) >= this.warn_err_idx) {
+				next = $(warn_err[this.warn_err_idx]).prevUntil(warn_err[this.warn_err_idx], this.css.wrong).first();
+			} else {
+				this.warn_err_idx = warn_err.length - 1;
+				next = $(warn_err[this.warn_err_idx]);
+			}
+			if (next && next.length == 1) {
+				this.warn_err_idx = $(warn_err).index(next);
+				var pos = next.offset().top - cont.offset().top + cont.scrollTop();
+				cont.animate({
+					scrollTop: pos - 40
+				});
+				$('#' + this.ids.line_indicator).css({
+					top: pos + 'px',
+					left: '1px',
+					display: 'block'
+				});
+			}
+		}.bind(this));
+		document.getElementById(this.ids.nav_down).addEventListener('click', function(e) {
+			if (this.warn_err_idx > -1) {
+				var warn_err = content.querySelectorAll(this.css.wrong);
+				var prev;
+				if ((warn_err.length - 1) < this.warn_err_idx) {
+					this.warn_err_idx = war_err.length - 1;
+				}
+				var prev;
+				if (this.warn_err_idx == 0 && warn_err.length == 1) {
+					prev = $(warn_err[this.warn_err_idx]);
+				} else {
+					prev = $(warn_err[this.warn_err_idx]).nextUntil(warn_err[this.warn_err_idx], this.css.wrong).first();
+				}
+				if (prev.length == 1) {
+					this.warn_err_idx = $(warn_err).index(prev);
+					var pos = prev.offset().top - cont.offset().top + cont.scrollTop();
+					cont.animate({
+						scrollTop: pos - 40
+					});
+					$('#' + this.ids.line_indicator).css({
+						top: pos + 'px',
+						left: '1px',
+						display: 'block'
+					});
+				}
+			}
 		}.bind(this));
 	},
 	set_actions: function() {
@@ -996,10 +1061,37 @@ var MsgEnvelope = {
 			if (is_bottom) {
 				container.scrollTop = container.scrollHeight;
 			}
+
+			// set jump to menu
+			var content = document.getElementById(this.ids.content);
+			var warn_err = content.querySelectorAll(this.css.wrong);
+			var nav = document.getElementById(this.ids.nav);
+			nav.style.display = (warn_err.length == 0) ? 'none' : 'block';
+
+			// hide line indicator if needed
+			var indicator = document.getElementById(this.ids.line_indicator);
+			if (warn_err.length == 0) {
+				indicator.style.display = 'none';
+			} else if (this.warn_err_idx > -1 && (warn_err.length -1) >= this.warn_err_idx) {
+				var cont = $(container);
+				var pos = $(warn_err[this.warn_err_idx]).offset().top - cont.offset().top + cont.scrollTop();
+				$('#' + this.ids.line_indicator).css({
+					top: pos + 'px',
+					left: '1px',
+					display: 'block'
+				});
+			}
 		}.bind(this);
 		MonitorCallsInterval.push(monitor_func);
 	},
 	open: function() {
+		// reset indicator index
+		this.warn_err_idx = -1;
+
+		// hide indicator
+		var indicator = document.getElementById(this.ids.line_indicator);
+		indicator.style.display = 'none';
+
 		document.getElementById(this.ids.modal).style.display = 'block';
 	},
 	close: function() {
@@ -1035,6 +1127,17 @@ var MsgEnvelope = {
 			envelope.classList.replace('w3-orange', 'w3-green');
 		}
 		envelope.querySelector('I').classList.remove('blink');
+
+		// reset indicator index
+		this.warn_err_idx = -1;
+
+		// hide navigation
+		var nav = document.getElementById(this.ids.nav);
+		nav.style.display = 'none';
+
+		// hide indicator
+		var indicator = document.getElementById(this.ids.line_indicator);
+		indicator.style.display = 'none';
 	},
 	find_issues: function(logs) {
 		var error = warning = false;
@@ -1043,14 +1146,14 @@ var MsgEnvelope = {
 		for (var i = 0; i < logs_len; i++) {
 			for (var j = 0; j < this.issue_regex.warning.length; j++) {
 				if (this.issue_regex.warning[j].test(logs[i])) {
-					logs[i] = '<span class="w3-orange">' + logs[i] + '</span>';
+					logs[i] = '<span class="w3-orange" rel="wrong">' + logs[i] + '</span>';
 					warning = true;
 					continue OUTER;
 				}
 			}
 			for (var j = 0; j < this.issue_regex.error.length; j++) {
 				if (this.issue_regex.error[j].test(logs[i])) {
-					logs[i] = '<span class="w3-red">' + logs[i] + '</span>';
+					logs[i] = '<span class="w3-red" rel="wrong">' + logs[i] + '</span>';
 					error = true;
 					continue OUTER;
 				}
