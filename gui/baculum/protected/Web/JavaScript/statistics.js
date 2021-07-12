@@ -48,6 +48,9 @@ var Statistics = {
 				if (status_type == 'ok' && this.jobs[i].joberrors > 0) {
 					status_type = 'warning';
 				}
+				if (status_type == 'waiting') {
+					status_type = 'running';
+				}
 				jobs_summary[status_type].push(this.jobs[i]);
 			}
 		}
