@@ -84,14 +84,14 @@ class BaculaSetting extends APIModule {
 		return $types;
 	}
 
-	public function getConfig($component_type = null, $resource_type = null, $resource_name = null) {
+	public function getConfig($component_type = null, $resource_type = null, $resource_name = null, $opts = []) {
 		$this->checkConfigSupport($component_type);
 		$config = array();
 		$json_tools = $this->Application->getModule('json_tools');
 		if (!is_null($component_type)) {
 			// get resources config
 			$params = array();
-			if ($component_type == self::COMPONENT_DIR_TYPE) {
+			if ($component_type == self::COMPONENT_DIR_TYPE && (!key_exists('apply_jobdefs', $opts) || $opts['apply_jobdefs'] == false)) {
 				$params['dont_apply_jobdefs'] = true;
 			}
 			if (!is_null($resource_type)) {
@@ -188,6 +188,7 @@ class BaculaSetting extends APIModule {
 
 		if (!is_null($resource_type) && !is_null($resource_name)) {
 			// Update single resource in config
+
 			$config = $this->updateConfigResource($config_orig, $config_new, $resource_type, $resource_name);
 		} elseif (count($config_orig) > 0 && !is_null($resource_type)) {
 			// Update whole config
@@ -200,7 +201,6 @@ class BaculaSetting extends APIModule {
 				$config[$i] = $this->updateResource($config[$i], $config[$i]);
 			}
 		}
-
 		// Save config to file
 		return $this->getModule('bacula_config')->setConfig($component_type, $config);
 	}

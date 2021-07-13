@@ -31,11 +31,17 @@ Prado::using('Application.Common.Class.Errors');
  */
 class Config extends BaculumAPIServer {
 	public function get() {
+		$misc = $this->getModule('misc');
 		$component_type = $this->Request->contains('component_type') ? $this->Request['component_type'] : null;
 		$resource_type = $this->Request->contains('resource_type') ? $this->Request['resource_type'] : null;
 		$resource_name = $this->Request->contains('resource_name') ? $this->Request['resource_name'] : null;
+		$apply_jobdefs = $this->Request->contains('apply_jobdefs') && $misc->isValidBoolean($this->Request['apply_jobdefs']) ? (bool)$this->Request['apply_jobdefs'] : null;
+		$opts = [];
+		if ($apply_jobdefs) {
+			$opts['apply_jobdefs'] = $apply_jobdefs;
+		}
 
-		$config = $this->getModule('bacula_setting')->getConfig($component_type, $resource_type, $resource_name);
+		$config = $this->getModule('bacula_setting')->getConfig($component_type, $resource_type, $resource_name, $opts);
 		$this->output = $config['output'];
 		$this->error = $config['exitcode'];
 	}
