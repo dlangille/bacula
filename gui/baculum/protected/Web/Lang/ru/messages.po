@@ -3469,3 +3469,132 @@ msgstr "Previous error/warning"
 
 msgid "Next error/warning"
 msgstr "Next error/warning"
+
+msgid "New backup job"
+msgstr "New backup job"
+
+msgid "New copy job"
+msgstr "New copy job"
+
+msgid "Step 1 - basic information about new job"
+msgstr "Step 1 - basic information about new job"
+
+msgid "New copy job wizard"
+msgstr "New copy job wizard"
+
+msgid "Copy jobs run copying backup jobs data from one volume to another. It is done by reading the previously backed up data from volume and writing it to another volume in a different pool. All process runs without using file daemon."
+msgstr "Copy jobs run copying backup jobs data from one volume to another. It is done by reading the previously backed up data from volume and writing it to another volume in a different pool. All process runs without using file daemon."
+
+msgid "Step 2 - what you want to copy"
+msgstr "Step 2 - what you want to copy"
+
+msgid "Source Pool"
+msgstr "Source Pool"
+
+msgid "Please select a pool from which you want to copy data."
+msgstr "Please select a pool from which you want to copy data."
+
+msgid "The source pool will be examined for finding backup jobs to copy."
+msgstr "The source pool will be examined for finding backup jobs to copy."
+
+msgid "See volumes in selected pool"
+msgstr "See volumes in selected pool"
+
+msgid "Step 3 - how would you like to copy"
+msgstr "Step 3 - how would you like to copy"
+
+msgid "Backup jobs selection criteria"
+msgstr "Backup jobs selection criteria"
+
+msgid "Please select the criteria that will be used for selecting backup jobs to copy."
+msgstr "Please select the criteria that will be used for selecting backup jobs to copy."
+
+msgid "Copy by job"
+msgstr "Copy by job"
+
+msgid "Copy by client"
+msgstr "Copy by client"
+
+msgid "Copy by volume"
+msgstr "Copy by volume"
+
+msgid "Copy by smallest volume"
+msgstr "Copy by smallest volume"
+
+msgid "Copy by oldest volume"
+msgstr "Copy by oldest volume"
+
+msgid "Copy by SQL query"
+msgstr "Copy by SQL query"
+
+msgid "Copy all uncopied jobs (Pool Uncopied Jobs)"
+msgstr "Copy all uncopied jobs (Pool Uncopied Jobs)"
+
+msgid "See backup jobs"
+msgstr "See backup jobs"
+
+msgid "See clients"
+msgstr "See clients"
+
+msgid "See volumes"
+msgstr "See volumes"
+
+msgid "Warning"
+msgstr "Warning"
+
+msgid "Note."
+msgstr "Note."
+
+msgid "To chosen destination pool %pool will be assigned new Storage %storage. This action can affect all jobs (listed below) that use this pool. Are you sure you want to assign the storage %storage to pool %pool?"
+msgstr "To chosen destination pool %pool will be assigned new Storage %storage. This action can affect all jobs (listed below) that use this pool. Are you sure you want to assign the storage %storage to pool %pool?"
+
+msgid "See all jobs that use the pool"
+msgstr "See all jobs that use the pool"
+
+msgid "Step 4 - where you like to copy"
+msgstr "Step 4 - where you like to copy"
+
+msgid "Destination Pool"
+msgstr "Destination Pool"
+
+msgid "Please select destination pool to which will be stored data."
+msgstr "Please select destination pool to which will be stored data."
+
+msgid "Destination Storage"
+msgstr "Destination Storage"
+
+msgid "Step 5 - copy job options"
+msgstr "Step 5 - copy job options"
+
+msgid "Other options"
+msgstr "Other options"
+
+msgid "Pick job name"
+msgstr "Pick job name"
+
+msgid "Pick client name"
+msgstr "Pick client name"
+
+msgid "Pick volume name"
+msgstr "Pick volume name"
+
+msgid "Level, Client and FileSet are not used during copy jobs running but they are required to define in copy job resource as the standard Job directives."
+msgstr "Level, Client and FileSet are not used during copy jobs running but they are required to define in copy job resource as the standard Job directives."
+
+msgid "Source Storage"
+msgstr "Source Storage"
+
+msgid "Please select a storage using which you want to read copy data."
+msgstr "Please select a storage using which you want to read copy data."
+
+msgid "Please select a storage using which you want to write copied data."
+msgstr "Please select a storage using which you want to write copied data."
+
+msgid "Not used"
+msgstr "Not used"
+
+msgid "New backup job wizard"
+msgstr "New backup job wizard"
+
+msgid "This wizard enables you to create in easy way a new backup job."
+msgstr "This wizard enables you to create in easy way a new backup job."

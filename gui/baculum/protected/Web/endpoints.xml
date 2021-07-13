@@ -39,7 +39,8 @@
 	<url ServiceParameter="WebConfigWizard" pattern="web/config/" />
 	<url ServiceParameter="RestoreWizard" pattern="web/restore/" />
 	<url ServiceParameter="RestoreWizard" pattern="web/restore/{jobid}/" parameters.jobid="\d+" />
-	<url ServiceParameter="NewJobWizard" pattern="web/new/job/" />
+	<url ServiceParameter="NewBackupJobWizard" pattern="web/new/backup-job/" />
+	<url ServiceParameter="NewCopyJobWizard" pattern="web/new/copy-job/" />
 	<url ServiceParameter="BaculumError" pattern="web/message/{error}/" parameters.error="\d+" />
 	<url ServiceParameter="Monitor" pattern="web/monitor/" />
 	<url ServiceParameter="OAuth2Redirect" pattern="web/redirect/" />
