@@ -54,6 +54,8 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 	const VALIDATION_GROUP = 'ValidationGroup';
 	const CSSCLASS = 'CssClass';
 	const DISABLED = 'Disabled';
+	const SHOW_RESET_BUTTON = 'ShowResetButton';
+	const SHOW_REMOVE_BUTTON = 'ShowRemoveButton';
 
 	public $display_directive;
 
@@ -286,6 +288,24 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 	public function setDisabled($disabled) {
 		$disabled = TPropertyValue::ensureBoolean($disabled);
 		$this->setViewState(self::DISABLED, $disabled);
+	}
+
+	public function getShowResetButton() {
+		return $this->getViewState(self::SHOW_RESET_BUTTON, true);
+	}
+
+	public function setShowResetButton($show) {
+		$show = TPropertyValue::ensureBoolean($show);
+		$this->setViewState(self::SHOW_RESET_BUTTON, $show);
+	}
+
+	public function getShowRemoveButton() {
+		return $this->getViewState(self::SHOW_REMOVE_BUTTON, true);
+	}
+
+	public function setShowRemoveButton($show) {
+		$show = TPropertyValue::ensureBoolean($show);
+		$this->setViewState(self::SHOW_REMOVE_BUTTON, $show);
 	}
 }
 ?>

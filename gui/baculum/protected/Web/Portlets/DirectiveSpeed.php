@@ -168,28 +168,6 @@ class DirectiveSpeed extends DirectiveTemplate {
 	}
 
 	/**
-	 * Set allow remove option.
-	 * If set, it shows remoe button for control. Default is set.
-	 *
-	 * @param boolean $allow_remove allow remove state
-	 * @return none
-	 */
-	public function setAllowRemove($allow_remove) {
-		$allow_remove = TPropertyValue::ensureBoolean($allow_remove);
-		$this->setViewState(self::ALLOW_REMOVE, $allow_remove);
-	}
-
-	/**
-	 * Get allow remove state.
-	 * If not set, by default option value is true.
-	 *
-	 * @return boolean allow remove state
-	 */
-	public function getAllowRemove() {
-		return $this->getViewState(self::ALLOW_REMOVE, true);
-	}
-
-	/**
 	 * Set unit type to show in control.
 	 * Allowed values are: decemial or binary.
 	 * If not set, there supported are both decimal and binary.

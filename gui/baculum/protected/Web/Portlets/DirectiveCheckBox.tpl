@@ -9,6 +9,6 @@
 			OnCheckedChanged="saveValue"
 			ActiveControl.EnableUpdate="false"
 		/>
-		<i class="fa fa-undo reset_btn" onclick="document.getElementById('<%=$this->Directive->ClientID%>').checked = <%=$this->getDefaultValue() ? 'true' : 'false'%>;" alt="<%[ Reset to default value ]%>" title="<%[ Reset to default value ]%>"></i>
+		<i class="fa fa-undo reset_btn<%=!$this->ShowResetButton ? ' hide' : ''%>" onclick="document.getElementById('<%=$this->Directive->ClientID%>').checked = <%=$this->getDefaultValue() ? 'true' : 'false'%>;" alt="<%[ Reset to default value ]%>" title="<%[ Reset to default value ]%>"></i>
 	</div>
 </div>

@@ -17,8 +17,8 @@
 			AutoPostBack="false"
 			OnSelectedIndexChanged="saveValue"
 		/> <%=$this->getRequired() ? '&nbsp;<i class="fa fa-asterisk w3-text-red" style="line-height: 40px"></i>' : ''%>
-		<i class="fa fa-undo reset_btn" onclick="var ftime = Units.format_time_period(parseInt('<%=$this->getDefaultValue()%>', 10), 'second'); document.getElementById('<%=$this->Directive->ClientID%>').value = ftime.value; document.getElementById('<%=$this->TimeFormat->ClientID%>').value = ftime.format;" alt="<%[ Reset to default value ]%>" title="<%[ Reset to default value ]%>"></i>
-		<i class="fa fa-trash-alt remove_btn" onclick="document.getElementById('<%=$this->Directive->ClientID%>').value = '';" alt="<%[ Remove directive ]%>" title="<%[ Remove directive ]%>"></i>
+		<i class="fa fa-undo reset_btn<%=!$this->ShowResetButton ? ' hide' : ''%>" onclick="var ftime = Units.format_time_period(parseInt('<%=$this->getDefaultValue()%>', 10), 'second'); document.getElementById('<%=$this->Directive->ClientID%>').value = ftime.value; document.getElementById('<%=$this->TimeFormat->ClientID%>').value = ftime.format;" alt="<%[ Reset to default value ]%>" title="<%[ Reset to default value ]%>"></i>
+		<i class="fa fa-trash-alt remove_btn<%=!$this->ShowRemoveButton ? ' hide' : ''%>" onclick="document.getElementById('<%=$this->Directive->ClientID%>').value = '';" alt="<%[ Remove directive ]%>" title="<%[ Remove directive ]%>"></i>
 		<com:TRequiredFieldValidator
 			ID="DirectiveValidator"
 			ValidationGroup="<%=$this->getValidationGroup()%>"
