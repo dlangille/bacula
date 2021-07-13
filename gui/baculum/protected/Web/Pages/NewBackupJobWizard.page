@@ -19,7 +19,7 @@
 					<div class="step w3-padding w3-text-white w3-margin-right <%=($this->Parent->ActiveStepIndex === 0 ? 'w3-light-green' : 'w3-green')%>">
 						<div class="w3-left"><i class="fa fa-tasks w3-xxxlarge"></i></div>
 						<div class="w3-clear"></div>
-						<h4><com:TTranslate Text="Type" /></h4>
+						<h4><com:TTranslate Text="General" /></h4>
 					</div>
 				</div>
 				<div class="w3-third w3-padding-16">
@@ -109,7 +109,6 @@
 				</com:TLinkButton>
 			</div>
 		</prop:StepNavigationTemplate>
-		 
 		<prop:FinishNavigationTemplate>
 			<div class="w3-center w3-section">
 				<com:TLinkButton
@@ -136,21 +135,11 @@
 			</div>
 			</div>
 		</prop:FinishNavigationTemplate>
-		<com:TWizardStep ID="Step1" Title="<%[ Step 1 - select job type ]%>" StepType="Auto">
+		<com:TWizardStep ID="Step1" Title="<%[ Step 1 - basic information about new job ]%>" StepType="Auto">
 			<div class="w3-container">
-				<h2><%[ New job wizard ]%></h2>
-				<p><%[ This wizard enables you to create in easy way a new job. ]%></p>
+				<h2><%[ New backup job wizard ]%></h2>
+				<p><%[ This wizard enables you to create in easy way a new backup job. ]%></p>
 				<!--p><%[ To start please select job type that you wish to create. ]%></p-->
-			</div>
-			<div class="w3-container w3-margin-top">
-				<com:Application.Web.Portlets.DirectiveComboBox
-					ID="Type"
-					DirectiveName="Type"
-					Label="Job Type"
-					Show="true"
-					ValidationGroup="NewJobDirective"
-					Required="true"
-					/>
 			</div>
 			<div class="w3-container w3-margin-top">
 				<com:Application.Web.Portlets.DirectiveTextBox
@@ -159,6 +148,16 @@
 					Label="Job Name"
 					ValidationGroup="NewJobDirective"
 					Required="true"
+					Show="true"
+					/>
+			</div>
+			<div class="w3-container w3-margin-top">
+				<com:Application.Web.Portlets.DirectiveTextBox
+					ID="Description"
+					DirectiveName="Description"
+					Label="Description"
+					ValidationGroup="NewJobDirective"
+					Required="false"
 					Show="true"
 					/>
 			</div>
@@ -464,12 +463,12 @@
 			<fieldset>
 				<legend><%[ General ]%></legend>
 				<div class="w3-container">
-					<div class="w3-quarter">Job Type</div>
-					<div class="w3-threequarter bold"><%=$this->Type->getDirectiveValue()%></div>
-				</div>
-				<div class="w3-container">
 					<div class="w3-quarter">Job Name</div>
 					<div class="w3-threequarter bold"><%=$this->Name->getDirectiveValue()%></div>
+				</div>
+				<div class="w3-container">
+					<div class="w3-quarter">Description</div>
+					<div class="w3-threequarter bold"><%=$this->Description->getDirectiveValue() ?: '-'%></div>
 				</div>
 				<div class="w3-container">
 					<div class="w3-quarter">JobDefs</div>

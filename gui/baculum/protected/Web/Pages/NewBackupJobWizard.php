@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -25,13 +25,13 @@ Prado::using('System.Web.UI.ActiveControls.TActiveLabel');
 Prado::using('System.Web.UI.WebControls.TWizard');
 
 /**
- * New job wizard page.
+ * New backup job wizard page.
  *
  * @author Marcin Haba <marcin.haba@bacula.pl>
  * @category Page
  * @package Baculum Web
  */
-class NewJobWizard extends BaculumWebPage {
+class NewBackupJobWizard extends BaculumWebPage {
 
 	const PREV_STEP = 'PrevStep';
 	const JOBDEFS = 'JobDefs';
@@ -61,7 +61,6 @@ class NewJobWizard extends BaculumWebPage {
 		}
 		switch ($step_index) {
 			case 0:	{
-				$this->loadJobTypes();
 				$this->loadJobDefs();
 				break;
 			}
@@ -113,19 +112,6 @@ class NewJobWizard extends BaculumWebPage {
 	public function wizardNext($sender, $param) {
 	}
 
-	/**
-	 * Load Job Types (step 1).
-	 *
-	 * @return none
-	 */
-	public function loadJobTypes() {
-		//$jobtype_list = array('Backup', 'Restore', 'Copy', 'Verify', 'Migrate', 'Admin');
-		$jobtype_list = array('Backup');
-		asort($jobtype_list);
-		$this->Type->setData($jobtype_list);
-		$this->Type->setDirectiveValue($jobtype_list[0]);
-		$this->Type->onLoad(null);
-	}
 
 	/**
 	 * Load JobDefs (step 1).
@@ -431,10 +417,10 @@ class NewJobWizard extends BaculumWebPage {
 		$jobdefs = $this->getJobDefs();
 		$job = array(
 			'Name' => $this->Name->getDirectiveValue(),
-			'Type' => $this->Type->getDirectiveValue(),
+			'Type' => 'Backup',
 		);
 		$jd = $this->JobDefs->getDirectiveValue();
-		$directives = array('Client', 'Fileset', 'Storage', 'SpoolData', 'SpoolAttributes',
+		$directives = array('Description', 'Client', 'Fileset', 'Storage', 'SpoolData', 'SpoolAttributes',
 			'SpoolSize', 'Pool', 'FullBackupPool', 'IncrementalBackupPool', 'DifferentialBackupPool',
 			'Level', 'Accurate', 'MaximumConcurrentJobs', 'Priority', 'ReRunFailedLevels', 'Schedule',
 			'RescheduleOnError', 'RescheduleIncompleteJobs', 'RescheduleInterval', 'RescheduleTimes',
