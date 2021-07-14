@@ -3472,130 +3472,130 @@ msgid "Next error/warning"
 msgstr "Następny błąd/ostrzeżenie"
 
 msgid "New backup job"
-msgstr "New backup job"
+msgstr "Nowy backup job"
 
 msgid "New copy job"
-msgstr "New copy job"
+msgstr "Nowy copy job"
 
 msgid "Step 1 - basic information about new job"
-msgstr "Step 1 - basic information about new job"
+msgstr "Krok 1 - podstawowe informacje o nowym zadaniu"
 
 msgid "New copy job wizard"
-msgstr "New copy job wizard"
+msgstr "Kreator nowego zadania kopiowania"
 
 msgid "Copy jobs run copying backup jobs data from one volume to another. It is done by reading the previously backed up data from volume and writing it to another volume in a different pool. All process runs without using file daemon."
-msgstr "Copy jobs run copying backup jobs data from one volume to another. It is done by reading the previously backed up data from volume and writing it to another volume in a different pool. All process runs without using file daemon."
+msgstr "Zadania kopiowania uruchamiają kopiowanie danych backupów z jednego wolumena na inny. To jest realizowane poprzez czytanie danych backupów z jednego wolumena i zapisywanie ich na innym wolumenie w innej puli wolumenów."
 
 msgid "Step 2 - what you want to copy"
-msgstr "Step 2 - what you want to copy"
+msgstr "Krok 2 - co chcesz kopiować"
 
 msgid "Source Pool"
-msgstr "Source Pool"
+msgstr "Pula źródłowa"
 
 msgid "Please select a pool from which you want to copy data."
-msgstr "Please select a pool from which you want to copy data."
+msgstr "Proszę wybrać pulę z której chcesz kopiować dane."
 
 msgid "The source pool will be examined for finding backup jobs to copy."
-msgstr "The source pool will be examined for finding backup jobs to copy."
+msgstr "Pula źródłowa będzie wybierana do znajdywania zadań backupu do skopiowania."
 
 msgid "See volumes in selected pool"
-msgstr "See volumes in selected pool"
+msgstr "Zobacz wolumeny z wybranej puli"
 
 msgid "Step 3 - how would you like to copy"
-msgstr "Step 3 - how would you like to copy"
+msgstr "Krok 3 - jak chciałbyś kopiować"
 
 msgid "Backup jobs selection criteria"
-msgstr "Backup jobs selection criteria"
+msgstr "Kryteria wyboru zadań backupu"
 
 msgid "Please select the criteria that will be used for selecting backup jobs to copy."
-msgstr "Please select the criteria that will be used for selecting backup jobs to copy."
+msgstr "Proszę wybrać kryteria, które będą użyte do wybrania zadań backupu do skopiowania."
 
 msgid "Copy by job"
-msgstr "Copy by job"
+msgstr "Kopiuj używając zadania"
 
 msgid "Copy by client"
-msgstr "Copy by client"
+msgstr "Kopiuj używając klienta"
 
 msgid "Copy by volume"
-msgstr "Copy by volume"
+msgstr "Kopiuj używając wolumenu"
 
 msgid "Copy by smallest volume"
-msgstr "Copy by smallest volume"
+msgstr "Kopiuj używając najmniejszego wolumenu"
 
 msgid "Copy by oldest volume"
-msgstr "Copy by oldest volume"
+msgstr "Kopiuj używając najstarszego wolumenu"
 
 msgid "Copy by SQL query"
-msgstr "Copy by SQL query"
+msgstr "Kopiuj używając zapytania SQL"
 
 msgid "Copy all uncopied jobs (Pool Uncopied Jobs)"
-msgstr "Copy all uncopied jobs (Pool Uncopied Jobs)"
+msgstr "Kopiuj wszystkie nieskopiowane zadania (Pool Uncopied Jobs)"
 
 msgid "See backup jobs"
-msgstr "See backup jobs"
+msgstr "Zobacz zadania backupów"
 
 msgid "See clients"
-msgstr "See clients"
+msgstr "Zobacz klientów"
 
 msgid "See volumes"
-msgstr "See volumes"
+msgstr "Zobacz wolumeny"
 
 msgid "Warning"
-msgstr "Warning"
+msgstr "Ostrzeżenie"
 
 msgid "Note."
-msgstr "Note."
+msgstr "Uwaga."
 
 msgid "To chosen destination pool %pool will be assigned new Storage %storage. This action can affect all jobs (listed below) that use this pool. Are you sure you want to assign the storage %storage to pool %pool?"
-msgstr "To chosen destination pool %pool will be assigned new Storage %storage. This action can affect all jobs (listed below) that use this pool. Are you sure you want to assign the storage %storage to pool %pool?"
+msgstr "Do wybranej puli docelowej %pool będzie przypisany nowy magazyn %storage. Ta akcja może mieć wpływ na wszystkie zadania backupu (wylistowane poniżej), które używają tej puli. Czy jesteś pewien, że chcesz przypisać %storage do puli %pool?"
 
 msgid "See all jobs that use the pool"
-msgstr "See all jobs that use the pool"
+msgstr "Zobacz wszystkie zadania, które używają tej puli"
 
 msgid "Step 4 - where you like to copy"
-msgstr "Step 4 - where you like to copy"
+msgstr "Krok 4 - gdzie chciałbyć kopiować"
 
 msgid "Destination Pool"
-msgstr "Destination Pool"
+msgstr "Pula docelowa"
 
 msgid "Please select destination pool to which will be stored data."
-msgstr "Please select destination pool to which will be stored data."
+msgstr "Proszę wybrać docelową pulę w której będą składowane dane."
 
 msgid "Destination Storage"
-msgstr "Destination Storage"
+msgstr "Docelowy magazyn"
 
 msgid "Step 5 - copy job options"
-msgstr "Step 5 - copy job options"
+msgstr "Krok 5 - opcje zadania kopiowania"
 
 msgid "Other options"
-msgstr "Other options"
+msgstr "Inne opcje"
 
 msgid "Pick job name"
-msgstr "Pick job name"
+msgstr "Wybierz nazwę zadania"
 
 msgid "Pick client name"
-msgstr "Pick client name"
+msgstr "Wybierz nazwę klienta"
 
 msgid "Pick volume name"
-msgstr "Pick volume name"
+msgstr "Wybierz nazwę wolumenu"
 
 msgid "Level, Client and FileSet are not used during copy jobs running but they are required to define in copy job resource as the standard Job directives."
-msgstr "Level, Client and FileSet are not used during copy jobs running but they are required to define in copy job resource as the standard Job directives."
+msgstr "Level, Client i FileSet nie są używane podczas działania zadań kopiowania, ale są wymagane do zdefiniowania w zadaniu kopiowania jako standardowe dyrektywy zasobu Job."
 
 msgid "Source Storage"
-msgstr "Source Storage"
+msgstr "Źródłowy magazyn"
 
 msgid "Please select a storage using which you want to read copy data."
-msgstr "Please select a storage using which you want to read copy data."
+msgstr "Proszę wybrać magazyn, używając którego chcesz czytać kopiowane dane."
 
 msgid "Please select a storage using which you want to write copied data."
-msgstr "Please select a storage using which you want to write copied data."
+msgstr "Proszę wybrać magazyn, używając którego chcesz zapisywać kopiowane dane."
 
 msgid "Not used"
-msgstr "Not used"
+msgstr "Nie używane"
 
 msgid "New backup job wizard"
-msgstr "New backup job wizard"
+msgstr "Kreator nowego zadania backupu"
 
 msgid "This wizard enables you to create in easy way a new backup job."
-msgstr "This wizard enables you to create in easy way a new backup job."
+msgstr "Ten kreator umożliwia tworzenie w łatwy sposób nowego zadania backupu."
