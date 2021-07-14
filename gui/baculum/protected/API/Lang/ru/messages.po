@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-08 16:02\n"
+"PO-Revision-Date: 2021-07-14 03:39\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -645,37 +645,38 @@ msgid "Changer command error"
 msgstr "Чейнджер ошибка команды"
 
 msgid "Copy"
-msgstr "Copy"
+msgstr "Копировать"
 
 msgid "Column visibility"
-msgstr "Column visibility"
+msgstr "Настройка столбцов"
 
 msgid "1 row selected"
-msgstr "1 row selected"
+msgstr "выбрана 1 строка"
 
 msgid "%d rows selected"
-msgstr "%d rows selected"
+msgstr "Выбрано %d строк"
 
 msgid "Show _MENU_ entries"
-msgstr "Show _MENU_ entries"
+msgstr "Показать _MENU_ записей"
 
 msgid "Showing _START_ to _END_ of _TOTAL_ entries"
-msgstr "Showing _START_ to _END_ of _TOTAL_ entries"
+msgstr "Показаны _START_ по _END_ из _TOTAL_ записей"
 
 msgid "First"
-msgstr "First"
+msgstr "Первая"
 
 msgid "Last"
-msgstr "Last"
+msgstr "Последняя"
 
 msgid "No matching records found"
-msgstr "No matching records found"
+msgstr "Не найдено ни одной записи"
 
 msgid "filtered from _MAX_ total entries"
-msgstr "filtered from _MAX_ total entries"
+msgstr "отфильтровано из _MAX_ всего записей"
 
 msgid "No data available in table"
-msgstr "No data available in table"
+msgstr "Нет данных в таблице"
 
 msgid "Search:"
-msgstr "Search:"
+msgstr "Поиск:"
+
