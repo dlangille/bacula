@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-06 18:07\n"
+"PO-Revision-Date: 2021-07-14 03:39\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -645,37 +645,38 @@ msgid "Changer command error"
 msgstr "Erro de comando do trocador"
 
 msgid "Copy"
-msgstr "Copy"
+msgstr "Copiar"
 
 msgid "Column visibility"
-msgstr "Column visibility"
+msgstr "Visibilidade da coluna"
 
 msgid "1 row selected"
-msgstr "1 row selected"
+msgstr "1 linha selecionada"
 
 msgid "%d rows selected"
-msgstr "%d rows selected"
+msgstr "%d linhas selecionadas"
 
 msgid "Show _MENU_ entries"
-msgstr "Show _MENU_ entries"
+msgstr "Exibir entradas _MENU_"
 
 msgid "Showing _START_ to _END_ of _TOTAL_ entries"
-msgstr "Showing _START_ to _END_ of _TOTAL_ entries"
+msgstr "Exibindo _START_ a _END_ de _TOTAL_ registros"
 
 msgid "First"
-msgstr "First"
+msgstr "Primeiro"
 
 msgid "Last"
-msgstr "Last"
+msgstr "Último"
 
 msgid "No matching records found"
-msgstr "No matching records found"
+msgstr "Nenhum registro correspondente encontrado"
 
 msgid "filtered from _MAX_ total entries"
-msgstr "filtered from _MAX_ total entries"
+msgstr "filtrado do total de _MAX_ registros"
 
 msgid "No data available in table"
-msgstr "No data available in table"
+msgstr "Não há dados disponíveis na tabela"
 
 msgid "Search:"
-msgstr "Search:"
+msgstr "Procurar:"
+

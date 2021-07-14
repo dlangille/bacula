@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-07-06 02:31\n"
+"PO-Revision-Date: 2021-07-14 03:39\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -3409,121 +3409,121 @@ msgid "Configure console"
 msgstr "Configurar console"
 
 msgid "Mode:"
-msgstr "Mode:"
+msgstr "Modo:"
 
 msgid "Reset table mode"
-msgstr "Reset table mode"
+msgstr "Redefinir modo de tabela"
 
 msgid "Jobs terminated normally"
-msgstr "Jobs terminated normally"
+msgstr "Jobs terminados normalmente"
 
 msgid "Jobs with warning"
-msgstr "Jobs with warning"
+msgstr "Jobs com avisos"
 
 msgid "Jobs finished with error"
-msgstr "Jobs finished with error"
+msgstr "Jobs finalizados com erro"
 
 msgid "Jobs running"
-msgstr "Jobs running"
+msgstr "Jobs em execução"
 
 msgid "Jobs canceled"
-msgstr "Jobs canceled"
+msgstr "Jobs cancelados"
 
 msgid "Copy"
-msgstr "Copy"
+msgstr "Copiar"
 
 msgid "Column visibility"
-msgstr "Column visibility"
+msgstr "Visibilidade da coluna"
 
 msgid "1 row selected"
-msgstr "1 row selected"
+msgstr "1 linha selecionada"
 
 msgid "%d rows selected"
-msgstr "%d rows selected"
+msgstr "%d linhas selecionadas"
 
 msgid "Show _MENU_ entries"
-msgstr "Show _MENU_ entries"
+msgstr "Exibir entradas _MENU_"
 
 msgid "Showing _START_ to _END_ of _TOTAL_ entries"
-msgstr "Showing _START_ to _END_ of _TOTAL_ entries"
+msgstr "Exibindo _START_ a _END_ de _TOTAL_ registros"
 
 msgid "First"
-msgstr "First"
+msgstr "Primeiro"
 
 msgid "Last"
-msgstr "Last"
+msgstr "Último"
 
 msgid "No matching records found"
-msgstr "No matching records found"
+msgstr "Nenhum registro correspondente encontrado"
 
 msgid "filtered from _MAX_ total entries"
-msgstr "filtered from _MAX_ total entries"
+msgstr "filtrado do total de _MAX_ registros"
 
 msgid "No data available in table"
-msgstr "No data available in table"
+msgstr "Não há dados disponíveis na tabela"
 
 msgid "Jump to:"
-msgstr "Jump to:"
+msgstr "Ir para:"
 
 msgid "Previous error/warning"
-msgstr "Previous error/warning"
+msgstr "Erro/aviso anterior"
 
 msgid "Next error/warning"
-msgstr "Next error/warning"
+msgstr "Próximo erro/aviso"
 
 msgid "New backup job"
-msgstr "New backup job"
+msgstr "Novo job de backup"
 
 msgid "New copy job"
-msgstr "New copy job"
+msgstr "Novo job de cópia"
 
 msgid "Step 1 - basic information about new job"
-msgstr "Step 1 - basic information about new job"
+msgstr "Passo 1 - Informações básicas sobre o novo job"
 
 msgid "New copy job wizard"
-msgstr "New copy job wizard"
+msgstr "Novo assistente de job de cópia"
 
 msgid "Copy jobs run copying backup jobs data from one volume to another. It is done by reading the previously backed up data from volume and writing it to another volume in a different pool. All process runs without using file daemon."
-msgstr "Copy jobs run copying backup jobs data from one volume to another. It is done by reading the previously backed up data from volume and writing it to another volume in a different pool. All process runs without using file daemon."
+msgstr "Jobs de cópia copiam dados de backups de um volume para outro. É feito através da leitura dos dados previamente salvos de um volume e da escrita em outro volume em uma pool diferente. Todo o processo é executado sem usar o daemon de arquivos."
 
 msgid "Step 2 - what you want to copy"
-msgstr "Step 2 - what you want to copy"
+msgstr "Passo 2 - O que você deseja copiar"
 
 msgid "Source Pool"
-msgstr "Source Pool"
+msgstr "Pool de origem"
 
 msgid "Please select a pool from which you want to copy data."
-msgstr "Please select a pool from which you want to copy data."
+msgstr "Por favor, selecione a pool que deseja copiar os dados."
 
 msgid "The source pool will be examined for finding backup jobs to copy."
-msgstr "The source pool will be examined for finding backup jobs to copy."
+msgstr "O pool de origem será analisado para encontrar jobs de backup para copiar."
 
 msgid "See volumes in selected pool"
-msgstr "See volumes in selected pool"
+msgstr "Ver volumes na pool selecionada"
 
 msgid "Step 3 - how would you like to copy"
-msgstr "Step 3 - how would you like to copy"
+msgstr "Passo 3 - Como você gostaria de copiar"
 
 msgid "Backup jobs selection criteria"
-msgstr "Backup jobs selection criteria"
+msgstr "Critérios para seleção de jobs"
 
 msgid "Please select the criteria that will be used for selecting backup jobs to copy."
-msgstr "Please select the criteria that will be used for selecting backup jobs to copy."
+msgstr "Por favor, selecione o critério que será usado para selecionar os jobs de backup a serem copiados."
 
 msgid "Copy by job"
-msgstr "Copy by job"
+msgstr "Copiar por job"
 
 msgid "Copy by client"
-msgstr "Copy by client"
+msgstr "Copiar por cliente"
 
 msgid "Copy by volume"
-msgstr "Copy by volume"
+msgstr "Copiar por volume"
 
 msgid "Copy by smallest volume"
-msgstr "Copy by smallest volume"
+msgstr "Copiar por menor volume"
 
 msgid "Copy by oldest volume"
-msgstr "Copy by oldest volume"
+msgstr "Copiar pelo volume mais antigo"
 
 msgid "Copy by SQL query"
 msgstr "Copy by SQL query"
