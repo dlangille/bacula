@@ -1,4 +1,37 @@
 
+                Release Notes for Baculum 11.0.5.3
+
+This is a minor new feature and bug fix release. The main new features for this
+version are: the new copy job wizard and improvements on the dashboard page.
+Russian, Portuguese and Polish translations have been updated as well.
+
+New changes and fixes:
+
+Baculum Web:
+ - New copy job wizard
+ - Backup job wizard improvements
+ - Add jump to previous/next error navigation in messages window
+ - Update Portuguese translations
+ - Update Russian translations
+ - Update Polish translations
+ - Make table texts translatable - reported by Sergey Zhidkov
+ - Make job status pie chart smaller - idea proposed by Sergey Zhidkov
+ - Change buttons on dasboard page - reported by Sergey Zhidkov
+ - Make job status pie chart clickable and direct to job history page with filtered results - idea proposed by Bill Arlofski
+ - Reduce size of icons in run job window and on dashboard page
+ - Fix opening job details in job table on main dashboard page - reported by Sergey Zhidkov
+ - Fix required fields in jobdefs forms
+ - Fix loading dashboard page if job status is created but not yet running
+ - Fix table width on schedule list page
+ - Fix legend in job status pie chart on job view page
+ - Move resource monitor and error message box to separate modules
+ - Add to directive controls option to hide reset button and remove button
+
+Baculum API:
+ - Add to config API endpoint parameter to apply jobdefs in results
+ - Update API documentation
+
+
                 Release Notes for Baculum 11.0.5.2
 
 This is a minor new feature and bug fix release. The main new features for this
