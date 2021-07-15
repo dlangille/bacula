@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-07-14 03:39\n"
+"PO-Revision-Date: 2021-07-15 18:43\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -1657,7 +1657,7 @@ msgid "Vol. bytes"
 msgstr "Размер Vol."
 
 msgid "Volume list"
-msgstr "Список томов Vol."
+msgstr "Список томов"
 
 msgid "Volume details"
 msgstr "Volume подробно"
@@ -3526,76 +3526,77 @@ msgid "Copy by oldest volume"
 msgstr "Копировать по старым томам"
 
 msgid "Copy by SQL query"
-msgstr "Copy by SQL query"
+msgstr "Копировать по SQL-запросу"
 
 msgid "Copy all uncopied jobs (Pool Uncopied Jobs)"
-msgstr "Copy all uncopied jobs (Pool Uncopied Jobs)"
+msgstr "Скопируйте все нескопированные задания (пул нескопированных заданий)"
 
 msgid "See backup jobs"
-msgstr "See backup jobs"
+msgstr "Просмотреть задания резервного копирования"
 
 msgid "See clients"
-msgstr "See clients"
+msgstr "Смотреть клиентов"
 
 msgid "See volumes"
-msgstr "See volumes"
+msgstr "Смотреть тома"
 
 msgid "Warning"
-msgstr "Warning"
+msgstr "Предупреждение"
 
 msgid "Note."
-msgstr "Note."
+msgstr "Примечание."
 
 msgid "To chosen destination pool %pool will be assigned new Storage %storage. This action can affect all jobs (listed below) that use this pool. Are you sure you want to assign the storage %storage to pool %pool?"
-msgstr "To chosen destination pool %pool will be assigned new Storage %storage. This action can affect all jobs (listed below) that use this pool. Are you sure you want to assign the storage %storage to pool %pool?"
+msgstr "Выбранному целевому пулу %pool  будет назначено новое хранилище %storage. Это действие может повлиять на все задания (перечисленные ниже), которые используют этот пул. Вы уверены, что хотите назначить хранилище %storage пулу %pool?"
 
 msgid "See all jobs that use the pool"
-msgstr "See all jobs that use the pool"
+msgstr "Посмотреть все задания, которые использует пул"
 
 msgid "Step 4 - where you like to copy"
-msgstr "Step 4 - where you like to copy"
+msgstr "Шаг 4 - куда вы хотите сделать резервную копию"
 
 msgid "Destination Pool"
-msgstr "Destination Pool"
+msgstr "Пул назначения"
 
 msgid "Please select destination pool to which will be stored data."
-msgstr "Please select destination pool to which will be stored data."
+msgstr "Пожалуйста, выберите пул назначения, в котором будут сохранены данные."
 
 msgid "Destination Storage"
-msgstr "Destination Storage"
+msgstr "Хранилище назначения"
 
 msgid "Step 5 - copy job options"
-msgstr "Step 5 - copy job options"
+msgstr "Шаг 5 - параметры копирования задания"
 
 msgid "Other options"
-msgstr "Other options"
+msgstr "Другие опции"
 
 msgid "Pick job name"
-msgstr "Pick job name"
+msgstr "Выберите название задания"
 
 msgid "Pick client name"
-msgstr "Pick client name"
+msgstr "Выберите имя клиента"
 
 msgid "Pick volume name"
-msgstr "Pick volume name"
+msgstr "Выберите название тома"
 
 msgid "Level, Client and FileSet are not used during copy jobs running but they are required to define in copy job resource as the standard Job directives."
-msgstr "Level, Client and FileSet are not used during copy jobs running but they are required to define in copy job resource as the standard Job directives."
+msgstr "Уровень, Клиент и FileSet не используются во время копирования работ, но они должны определить в копировании ресурс задания в качестве стандартных директив задания."
 
 msgid "Source Storage"
-msgstr "Source Storage"
+msgstr "Исходное хранилище"
 
 msgid "Please select a storage using which you want to read copy data."
-msgstr "Please select a storage using which you want to read copy data."
+msgstr "Пожалуйста, выберите пул, из которого вы хотите скопировать данные."
 
 msgid "Please select a storage using which you want to write copied data."
-msgstr "Please select a storage using which you want to write copied data."
+msgstr "Пожалуйста, выберите пул, из которого вы хотите скопировать данные."
 
 msgid "Not used"
-msgstr "Not used"
+msgstr "Не используется"
 
 msgid "New backup job wizard"
-msgstr "New backup job wizard"
+msgstr "Мастер нового задания"
 
 msgid "This wizard enables you to create in easy way a new backup job."
-msgstr "This wizard enables you to create in easy way a new backup job."
+msgstr "Этот мастер позволяет вам легко создать новое задание."
+
