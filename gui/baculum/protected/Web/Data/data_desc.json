@@ -121,20 +121,20 @@
 				"Required": false,
 				"ValueType": "addresses_port",
 				"DefaultValue": 9101,
-				"FieldType": "TextBox",
+				"FieldType": "Integer",
 				"Section": "Networking"
 			},
 			"DirAddress": {
 				"Required": false,
 				"ValueType": "addresses_address",
-				"DefaultValue": 9101,
+				"DefaultValue": 0,
 				"FieldType": "TextBox",
 				"Section": "Networking"
 			},
 			"DirAddresses": {
 				"Required": false,
 				"ValueType": "addresses",
-				"DefaultValue": 9101,
+				"DefaultValue": 0,
 				"FieldType": "TextBox",
 				"Section": "Networking"
 			},
@@ -2925,22 +2925,22 @@
 			"SdAddress": {
 				"Required": false,
 				"ValueType": "addresses_address",
-				"DefaultValue": 9103,
+				"DefaultValue": 0,
 				"FieldType": "TextBox",
 				"Section": "Networking"
 			},
 			"SdAddresses": {
 				"Required": false,
 				"ValueType": "addresses",
-				"DefaultValue": 9103,
+				"DefaultValue": 0,
 				"FieldType": "TextBox",
 				"Section": "Networking"
 			},
 			"SdPort": {
 				"Required": false,
 				"ValueType": "addresses_port",
-				"DefaultValue": 9103,
-				"FieldType": "TextBox",
+				"DefaultValue": 0,
+				"FieldType": "Integer",
 				"Section": "Networking"
 			},
 			"ClientConnectTimeout": {
@@ -4074,20 +4074,20 @@
 				"Required": false,
 				"ValueType": "addresses_port",
 				"DefaultValue": 9102,
-				"FieldType": "TextBox",
+				"FieldType": "Integer",
 				"Section": "Networking"
 			},
 			"FdAddress": {
 				"Required": false,
 				"ValueType": "addresses_address",
-				"DefaultValue": 9102,
+				"DefaultValue": 0,
 				"FieldType": "TextBox",
 				"Section": "Networking"
 			},
 			"FdAddresses": {
 				"Required": false,
 				"ValueType": "addresses",
-				"DefaultValue": 9102,
+				"DefaultValue": 0,
 				"FieldType": "TextBox",
 				"Section": "Networking"
 			},
@@ -4465,20 +4465,20 @@
 				"Required": false,
 				"ValueType": "addresses_port",
 				"DefaultValue": 9102,
-				"FieldType": "TextBox",
+				"FieldType": "Integer",
 				"Section": "Networking"
 			},
 			"FdAddress": {
 				"Required": false,
 				"ValueType": "addresses_address",
-				"DefaultValue": 9102,
+				"DefaultValue": 0,
 				"FieldType": "TextBox",
 				"Section": "Networking"
 			},
 			"FdAddresses": {
 				"Required": false,
 				"ValueType": "addresses",
-				"DefaultValue": 9102,
+				"DefaultValue": 0,
 				"FieldType": "TextBox",
 				"Section": "Networking"
 			},
