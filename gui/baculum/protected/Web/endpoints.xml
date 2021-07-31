@@ -24,8 +24,6 @@
 	<url ServiceParameter="ClientView" pattern="web/client/{client}/" parameters.client="[a-zA-Z0-9:.\-_ ]+" />
 	<url ServiceParameter="FileSetList" pattern="web/fileset/" />
 	<url ServiceParameter="FileSetView" pattern="web/fileset/{fileset}/" parameters.fileset="[a-zA-Z0-9:.\-_ ]+" />
-	<url ServiceParameter="StatisticsList" pattern="web/statistics/" />
-	<url ServiceParameter="StatisticsView" pattern="web/statistics/{component_type}/{statistics}/" parameters.component_type="\w+" parameters.statistics="[a-zA-Z0-9:.\-_ ]+"/>
 	<url ServiceParameter="ScheduleList" pattern="web/schedule/" />
 	<url ServiceParameter="ScheduleStatusList" pattern="web/schedule/status/" />
 	<url ServiceParameter="ScheduleView" pattern="web/schedule/{schedule}/" parameters.schedule="[a-zA-Z0-9:.\-_ ]+" />
