@@ -124,6 +124,7 @@ class BaculaConfigResourceList extends Portlets {
 		$this->ResourceConfig->setComponentType($component_type);
 		$this->ResourceConfig->setComponentName($component_name);
 		$this->ResourceConfig->setResourceType($resource_type);
+		$this->ResourceConfig->IsDirectiveCreated = false;
 		$this->ResourceConfig->raiseEvent('OnDirectiveListLoad', $this, null);
 	}
 

@@ -56,23 +56,11 @@ class NewCopyJobWizard extends BaculumWebPage {
 		];
 	}
 
-	public function onLoad($param) {
-		parent::onLoad($param);
-		$this->JobDefs->saveDirective();
-		$this->Pool->saveDirective();
-		$this->SelectionType->saveDirective();
-		$this->NextPool->saveDirective();
-		$this->SourceStorage->saveDirective();
-		$this->DestinationStorage->saveDirective();
-		$this->Messages->saveDirective();
-		$this->Schedule->saveDirective();
-		$this->Level->saveDirective();
-		$this->Client->saveDirective();
-		$this->FileSet->saveDirective();
-	}
-
-	public function onLoadComplete($param) {
-		parent::onLoadComplete($param);
+	public function onPreRender($param) {
+		parent::onPreRender($param);
+		if ($this->IsCallBack) {
+			return;
+		}
 		$step_index = $this->NewJobWizard->getActiveStepIndex();
 		$prev_step = $this->getPrevStep();
 		$this->setPrevStep($step_index);
@@ -148,7 +136,7 @@ class NewCopyJobWizard extends BaculumWebPage {
 			}
 			asort($jobdefs_list);
 			$this->JobDefs->setData($jobdefs_list);
-			$this->JobDefs->onLoad(null);
+			$this->JobDefs->createDirective();
 		}
 	}
 
@@ -212,7 +200,7 @@ class NewCopyJobWizard extends BaculumWebPage {
 		if (key_exists($name, $jobdefs) && is_null($control->getDirectiveValue())) {
 			$control->setDirectiveValue($jobdefs[$name]);
 		}
-		$control->onLoad(null);
+		$control->createDirective();
 	}
 
 	/**
@@ -300,7 +288,7 @@ class NewCopyJobWizard extends BaculumWebPage {
 	 */
 	public function loadSelectionTypes() {
 		$this->SelectionType->setData($this->sel_types);
-		$this->SelectionType->onLoad(null);
+		$this->SelectionType->createDirective();
 	}
 
 	/**
@@ -384,7 +372,7 @@ class NewCopyJobWizard extends BaculumWebPage {
 			if (key_exists('Storage', $jobdefs) && is_array($jobdefs['Storage']) && count($jobdefs['Storage']) == 1 && is_null($control->getDirectiveValue())) {
 				$control->setDirectiveValue($jobdefs['Storage'][0]);
 			}
-			$control->onLoad(null);
+			$control->createDirective();
 		}
 	}
 
@@ -490,7 +478,7 @@ class NewCopyJobWizard extends BaculumWebPage {
 			if (key_exists('Messages', $jobdefs)) {
 				$this->Messages->setDirectiveValue($jobdefs['Messages']);
 			}
-			$this->Messages->onLoad(null);
+			$this->Messages->createDirective();
 		}
 	}
 
@@ -516,7 +504,7 @@ class NewCopyJobWizard extends BaculumWebPage {
 			if (key_exists('Schedule', $jobdefs)) {
 				$this->Schedule->setDirectiveValue($jobdefs['Schedule']);
 			}
-			$this->Schedule->onLoad(null);
+			$this->Schedule->createDirective();
 		}
 	}
 
@@ -537,7 +525,7 @@ class NewCopyJobWizard extends BaculumWebPage {
 			// no level in jobdefs, take first level
 			$this->Level->setDirectiveValue($level_list[0]);
 		}
-		$this->Level->onLoad(null);
+		$this->Level->createDirective();
 	}
 
 	/**
@@ -563,7 +551,7 @@ class NewCopyJobWizard extends BaculumWebPage {
 			} elseif (count($client_list) > 0) {
 				$this->Client->setDirectiveValue($client_list[0]);
 			}
-			$this->Client->onLoad(null);
+			$this->Client->createDirective();
 		}
 	}
 
@@ -590,7 +578,7 @@ class NewCopyJobWizard extends BaculumWebPage {
 			} elseif (count($fileset_list) > 0) {
 				$this->FileSet->setDirectiveValue($fileset_list[0]);
 			}
-			$this->FileSet->onLoad(null);
+			$this->FileSet->createDirective();
 		}
 	}
 

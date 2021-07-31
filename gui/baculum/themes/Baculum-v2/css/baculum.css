@@ -373,6 +373,10 @@ table.status_table td, table.status_table td i {
 	width: 160px;
 }
 
+.xtinybox {
+	width: 65px !important;
+}
+
 a.raw {
 	text-decoration: none;
 }
@@ -501,6 +505,10 @@ table.component td:nth-of-type(1) {
 	flex-basis: 385px;
 }
 
+.status_header.schedule > div {
+	flex-basis: 300px;
+}
+
 #status_storage_filters select {
 	width: 250px;
 	margin-left: 10px;
@@ -567,3 +575,9 @@ img.job_weather_icon {
 	flex-basis: 140px;
 	height: 28px;
 }
+
+/* Schedule setting */
+.day_of_month, .week_of_month, .week_of_year {
+	width: 14px;
+}
+

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2020 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -66,68 +66,135 @@ class Params extends CommonModule {
 		'sat' => 'Saturday'
 	);
 
-	public static function getMonthsConfig(array $months_cfg) {
+	/**
+	 * Get time value in config form.
+	 * Possible is of three modes:
+	 *  - hourly at specified minute
+	 *  - hourly on every full hour
+	 *  - daily at specified hour and minute
+	 *
+	 * @param string $hour time hour
+	 * @param string $minute time minute
+	 * @return string time config value
+	 */
+	public static function getTimeConfig(array $hour, $minute) {
+		$t = '';
+		$hour_len = count($hour);
+		$is_hourly = ($hour_len == 24);
+		$is_daily = ($hour_len == 1);
+		if ($is_hourly && is_int($minute) && $minute > 0) {
+			// hourly at minute
+			$min = sprintf('%02d', $minute);
+			$t = "hourly at 0:{$min}";
+		} elseif ($is_daily && is_int($minute)) {
+			// at specified hour and minute
+			$min = sprintf('%02d', $minute);
+			$t = "at {$hour[0]}:{$min}";
+		} else {
+			// hourly every full hour
+			$t = 'hourly';
+		}
+		return $t;
+	}
+	/**
+	 * Get months of the year value in config form.
+	 *
+	 * @param array $moys_cfg month array (ex. [0,1,2,3,4])
+	 * @return string months of the year config value
+	 */
+	public static function getMonthsOfYearConfig(array $moys_cfg) {
 		$month = '';
-		$month_count = count($months_cfg);
 		$months = array_keys(Params::$months);
-		if ($month_count < 12) {
-			if ($month_count > 1) {
-				$month_start = $months_cfg[0];
-				$month_end = $months_cfg[$month_count-1];
-				$month .= $months[$month_start] . '-' . $months[$month_end];
-			} else {
-				$month .= $months[$months_cfg[0]];
+		$moys_len = count($moys_cfg);
+		if ($moys_len < 12) {
+			$moy_value_cfg = [];
+			for ($i = 0; $i < $moys_len; $i++) {
+				$moy_value_cfg[] = $months[$moys_cfg[$i]];
 			}
+			$month = implode(',', $moy_value_cfg);
 		}
 		return $month;
 	}
 
-	public static function getWeeksConfig(array $weeks_cfg) {
+	/**
+	 * Get weeks of the month value in config form.
+	 *
+	 * @param array $woms_cfg week array (ex. [0,1,4])
+	 * @return string weeks of the month config value
+	 */
+	public static function getWeeksOfMonthConfig(array $woms_cfg) {
 		$week = '';
-		$week_count = count($weeks_cfg);
+		$woms_len = count($woms_cfg);
 		$weeks = array_keys(Params::$weeks);
-		if ($week_count < 6) {
-			if ($week_count > 1) {
-				$week_start = $weeks_cfg[0];
-				$week_end = $weeks_cfg[$week_count-1];
-				$week .= $weeks[$week_start] . '-' . $weeks[$week_end];
-			} else {
-				$week .= $weeks[$weeks_cfg[0]];
+		if ($woms_len < 6) {
+			$wom_value_cfg = [];
+			for ($i = 0; $i < $woms_len; $i++) {
+				$wom_value_cfg[] = $weeks[$woms_cfg[$i]];
 			}
+			$week = implode(',', $wom_value_cfg);
 		}
 		return $week;
 	}
 
-	public static function getWdaysConfig(array $wdays_cfg) {
+	/**
+	 * Get days of the week value in config form.
+	 *
+	 * @param array $dows_cfg day array (ex. [0,1,5])
+	 * @return string days of the week config value
+	 */
+	public static function getDaysOfWeekConfig(array $dows_cfg) {
 		$wday = '';
-		$wday_count = count($wdays_cfg);
+		$dows_len = count($dows_cfg);
 		$wdays = array_keys(Params::$wdays);
-		if ($wday_count < 7) {
-			if ($wday_count > 1) {
-				$wday_start = $wdays_cfg[0];
-				$wday_end = $wdays_cfg[$wday_count-1];
-				$wday .= $wdays[$wday_start] . '-' . $wdays[$wday_end];
-			} else {
-				$wday .= $wdays[$wdays_cfg[0]];
+		if ($dows_len < 7) {
+			$dow_value_cfg = [];
+			for ($i = 0; $i < $dows_len; $i++) {
+				$dow_value_cfg[] = $wdays[$dows_cfg[$i]];
 			}
+			$wday = implode(',', $dow_value_cfg);
 		}
 		return $wday;
 	}
 
 	/**
-	 * Get day value in config form.
+	 * Get days of the month value in config form.
+	 * Zero-length $doms_cfg means lastday of the month.
 	 *
-	 * @param array $days_cfg days array (ex. array(0,1,2,3,4))
-	 * @return string days config value
+	 * @param array $doms_cfg day array (ex. [0,1,5,22,30])
+	 * @return string days of the month config value
 	 */
-	public static function getDaysConfig(array $days_cfg) {
+	public static function getDaysOfMonthConfig(array $doms_cfg) {
 		$days = '';
-		if (count($days_cfg) < 31) {
-			$days_map = array_map(array('Params', 'getDayByNo') , $days_cfg);
-			$days = implode(',', $days_map);
+		$doms_len = count($doms_cfg);
+		if ($doms_len === 0) {
+			$days = 'on lastday';
+		} elseif ($doms_len < 31) {
+			$doms_w = array_map(function($el) {
+				return ++$el;
+			}, $doms_cfg);
+			$days = 'on ' . implode(',', $doms_w);
 		}
 		return $days;
 	}
+
+	/**
+	 * Get weeks of year value in config form.
+	 *
+	 * @param array $woy_cfg week array (ex. array(0,1,2,3,4))
+	 * @return string weeks of the year config value
+	 */
+	public static function getWeeksOfYearConfig(array $woys_cfg) {
+		$weeks = '';
+		$woys_len = count($woys_cfg);
+		if ($woys_len < 54) {
+			$woys_w = array_map(function($el) {
+				return ('w' . sprintf('%02d', $el));
+			}, $woys_cfg);
+			$weeks = implode(',', $woys_w);
+		}
+		return $weeks;
+	}
+
 
 	/**
 	 * Simple method to prepare day config value by day number.

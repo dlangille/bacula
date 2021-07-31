@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -93,15 +93,6 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		}
 	}
 
-	public function onPreRender($param) {
-		/**
-		 * This method overwrites DirectiveListTemplate::onPreRender()
-		 * Not calling parent method is intentional here because this class
-		 * isn't typical control list class and calling parent::onPreRender()
-		 * causes error.
-		 */
-	}
-
 	private function getConfigData($host, array $parameters) {
 		$default_params = array('config');
 		$params = array_merge($default_params, $parameters);
@@ -115,6 +106,10 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 
 	public function loadConfig() {
 		$load_values = $this->getLoadValues();
+		if (!$load_values && $this->IsDirectiveCreated) {
+			// This control is loaded only once, otherwise fields loose assigned values.
+			return;
+		}
 
 		$host = $this->getHost();
 		$component_type = $this->getComponentType();
@@ -253,6 +248,7 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 		$this->RepeaterDirectives->DataSource = $directives;
 		$this->RepeaterDirectives->dataBind();
 		$this->ConfigDirectives->Display = 'Dynamic';
+		$this->IsDirectiveCreated = true;
 	}
 
 	public function loadDirectives($sender, $param) {
@@ -285,6 +281,11 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 				}
 				$directive_name = $controls[$j]->getDirectiveName();
 				$directive_value = $controls[$j]->getDirectiveValue();
+
+				if (is_null($directive_name)) {
+					// skip controls without data
+					continue;
+				}
 
 				$default_value = null;
 				if (key_exists($directive_name, $resource_desc)) {
@@ -356,8 +357,12 @@ class BaculaConfigDirectives extends DirectiveListTemplate {
 			}
 		}
 		$load_values = $this->getLoadValues();
-		$res_name_dir = key_exists('Name', $directives) ? $directives['Name'] : '';
+		$res_name_dir = key_exists('Name', $directives) ? $directives['Name'] : null;
 		$resource_name = $this->getResourceName();
+		if (!$res_name_dir && $resource_name) {
+			// In some cases with double control load Name value stays empty. Recreate it here.
+			$directives['Name'] = $res_name_dir = $resource_name;
+		}
 		if ($load_values === true) {
 			if ($resource_name !== $res_name_dir) {
 				// RENAME RESOURCE

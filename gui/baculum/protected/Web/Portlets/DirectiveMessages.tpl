@@ -8,7 +8,6 @@
 				CssClass="w3-button w3-green w3-right"
 				OnCommand="SourceTemplateControl.removeMessages"
 				CommandName="<%=$this->ItemIndex%>"
-				CommandParameter="save"
 			>
 				<i class="fa fa-trash-alt"></i> &nbsp;<%[ Remove ]%>
 			</com:TActiveLinkButton>

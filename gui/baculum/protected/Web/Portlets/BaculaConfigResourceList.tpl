@@ -133,7 +133,7 @@ var oBaculaConfigResourceList<%=$this->ClientID%> = {
 			<h2 id="resource_window_title_add<%=$this->ClientID%>" style="display: none"><%[ Add ]%> <%=$this->getResourceType()%></h2>
 			<h2 id="resource_window_title_edit<%=$this->ClientID%>" style="display: none"><%[ Edit ]%> <%=$this->getResourceType()%></h2>
 		</header>
-		<div class="w3-container w3-margin-left w3-margin-right w3-margin-top w3-text-teal">
+		<div class="w3-container w3-margin-left w3-margin-right w3-margin-top">
 			<com:Application.Web.Portlets.BaculaConfigDirectives
 				ID="ResourceConfig"
 				ShowRemoveButton="false"

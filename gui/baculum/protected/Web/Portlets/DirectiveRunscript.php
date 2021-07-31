@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -36,8 +36,8 @@ class DirectiveRunscript extends DirectiveListTemplate {
 
 	private $directive_types = array(
 		'DirectiveCheckBox',
-		'DirectiveTextBox',
-		'DirectiveComboBox'
+		'DirectiveComboBox',
+		'DirectiveTextBox'
 	);
 
 	public function loadConfig() {
@@ -133,6 +133,7 @@ class DirectiveRunscript extends DirectiveListTemplate {
 		for ($i = 0; $i < count($this->directive_types); $i++) {
 			$controls = $this->RepeaterRunscriptOptions->findControlsByType($this->directive_types[$i]);
 			for ($j = 0; $j < count($controls); $j++) {
+				$controls[$j]->setValue();
 				$directive_name = $controls[$j]->getDirectiveName();
 				$directive_value = $controls[$j]->getDirectiveValue();
 				$default_value = null;
@@ -180,7 +181,7 @@ class DirectiveRunscript extends DirectiveListTemplate {
 	}
 
 	public function newRunscriptDirective() {
-		$data = $this->getDirectiveValue(true);
+		$data = $this->getDirectiveValue();
 		if (is_array($data) && key_exists('Runscript', $data) && is_array($data['Runscript'])) {
 			$data['Runscript'][] = new stdClass;
 		} else {

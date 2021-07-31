@@ -73,7 +73,6 @@
 				</com:TLinkButton>
 				<com:TLinkButton
 					CommandName="NextStep"
-					CommandParameter="save"
 					ValidationGroup="NewJobDirective"
 					CssClass="w3-button w3-green"
 				>
@@ -101,7 +100,6 @@
 				</com:TLinkButton>
 				<com:TLinkButton
 					CommandName="NextStep"
-					CommandParameter="save"
 					ValidationGroup="NewJobDirective"
 					CssClass="w3-button w3-green"
 				>
@@ -127,7 +125,6 @@
 				</com:TLinkButton>
 				<com:TLinkButton
 					CommandName="Complete"
-					CommandParameter="save"
 					CssClass="w3-button w3-green"
 				>
 					<%[ Create job ]%> &nbsp;<i class="fa fa-paper-plane"></i>
@@ -211,11 +208,14 @@
 					SaveDirectiveActionOk="$('#job_wizard_new_fileset').slideUp(); set_new_fileset(); $('#fileset_save_ok').show();"
 				/>
 			</div>
+			<com:TCallback ID="LoadFilesetList" OnCallback="LoadFilesetList" />
 			<script type="text/javascript">
 				function set_new_fileset() {
 					var container_id = 'job_wizard_new_fileset';
 					var resource_id = '<%=$this->Fileset->Directive->ClientID%>';
 					set_new_resource(container_id, resource_id);
+					var cb = <%=$this->LoadFilesetList->ActiveControl->JavaScript%>;
+					cb.dispatch();
 				}
 			</script>
 		</com:TWizardStep>
@@ -315,11 +315,14 @@
 						/>
 				</div>
 			</div>
+			<com:TCallback ID="LoadPoolList" OnCallback="LoadPoolList" />
 			<script type="text/javascript">
 				function set_new_pool() {
 					var container_id = 'job_wizard_new_pool';
 					var resource_id = '<%=$this->Pool->Directive->ClientID%>';
 					set_new_resource(container_id, resource_id);
+					var cb = <%=$this->LoadPoolList->ActiveControl->JavaScript%>;
+					cb.dispatch();
 				}
 			</script>
 		</com:TWizardStep>
@@ -451,11 +454,14 @@
 						 />
 				</div>
 			</div>
+			<com:TCallback ID="LoadScheduleList" OnCallback="LoadScheduleList" />
 			<script type="text/javascript">
 				function set_new_schedule() {
 					var container_id = 'job_wizard_new_schedule';
 					var resource_id = '<%=$this->Schedule->Directive->ClientID%>';
 					set_new_resource(container_id, resource_id);
+					var cb = <%=$this->LoadScheduleList->ActiveControl->JavaScript%>;
+					cb.dispatch();
 				}
 			</script>
 		</com:TWizardStep>

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -58,6 +58,7 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 	const SHOW_REMOVE_BUTTON = 'ShowRemoveButton';
 
 	public $display_directive;
+	private $data_changed = false;
 
 	private $command_params = array('save', 'add');
 
@@ -73,6 +74,14 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 	public function onInit($param) {
 		parent::onInit($param);
 		$this->ensureChildControls();
+	}
+
+	public function onLoad($param) {
+		parent::onLoad($param);
+		if ($this->getPage()->IsPostBack && $this->getValue() != $this->getDefaultValue()) {
+			// It has special meaning for directive controls used in wizards
+			$this->setValue();
+		}
 	}
 
 	public function bubbleEvent($sender, $param) {
@@ -92,15 +101,20 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 	}
 
 	public function saveValue($sender, $param) {
-		$command_param = $this->getCmdParam();
-		if ($command_param === 'save' && method_exists($this, 'getValue')) {
+		if ($this->getCmdParam() === 'save') {
+			$this->setValue();
+		}
+	}
+
+	public function setValue() {
+		if (method_exists($this, 'getValue')) {
 			$new_value = $this->getValue();
 			$this->setDirectiveValue($new_value);
 		}
 	}
 
-	public function onLoad($param) {
-		parent::onLoad($param);
+	public function onPreRender($param) {
+		parent::onPreRender($param);
 		if (!$this->getIsDirectiveCreated()) {
 			$this->createDirective();
 			$this->setIsDirectiveCreated(true);
@@ -168,6 +182,7 @@ class DirectiveTemplate extends DirectiveControlTemplate implements IDirectiveFi
 	}
 
 	public function getDirectiveValue() {
+		$this->saveValue(null, null);
 		return $this->getViewState(self::DIRECTIVE_VALUE);
 	}
 

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -52,6 +52,7 @@ Prado::using('Application.Web.Portlets.DirectiveMessages');
 class DirectiveRenderer extends TItemDataRenderer {
 
 	const DATA = 'Data';
+	const IS_DATA_BOUND = 'IsDataBound';
 
 	private $directive_types = array(
 		'DirectiveCheckBox',
@@ -88,8 +89,8 @@ class DirectiveRenderer extends TItemDataRenderer {
 			$this->addSection($data['section']);
 		}
 
-		$item = $this->createItem($data);
-		$this->addParsedObject($item);
+		$this->createItem($data);
+		$this->setIsDataBound(true);
 	}
 
 	public function createItem($data) {
@@ -118,6 +119,8 @@ class DirectiveRenderer extends TItemDataRenderer {
 			if ($data['directive_name'] === 'Name') {
 				$control->setDisabled($this->SourceTemplateControl->getDisableRename());
 			}
+			$this->addParsedObject($control);
+			$control->createDirective();
 		} elseif (in_array($type, $this->directive_list_types)) {
 			$control->setHost($data['host']);
 			$control->setComponentType($data['component_type']);
@@ -132,6 +135,10 @@ class DirectiveRenderer extends TItemDataRenderer {
 			$control->setShow($data['show']);
 			$control->setGroupName($data['group_name']);
 			$control->setResource($data['resource']);
+			$this->addParsedObject($control);
+			if (!$this->getIsDataBound()) {
+				$control->raiseEvent('OnDirectiveListLoad', $this, null);
+			}
 		}
 		return $control;
 	}
@@ -157,6 +164,14 @@ class DirectiveRenderer extends TItemDataRenderer {
 
 	public function setData($data) {
 		$this->setViewState(self::DATA, $data);
+	}
+
+	public function getIsDataBound() {
+		return $this->getViewState(self::IS_DATA_BOUND);
+	}
+
+	public function setIsDataBound($is_data_bound) {
+		$this->setViewState(self::IS_DATA_BOUND, $is_data_bound);
 	}
 
 	private function getField($field_type) {

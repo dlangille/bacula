@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -45,6 +45,7 @@ class DirectiveListTemplate extends ConfigListTemplate implements IActiveControl
 	const SHOW = 'Show';
 	const PARENT_NAME = 'ParentName';
 	const GROUP_NAME = 'GroupName';
+	const IS_DIRECTIVE_CREATED = 'IsDirectiveCreated';
 
 	public $display_directive;
 
@@ -69,10 +70,7 @@ class DirectiveListTemplate extends ConfigListTemplate implements IActiveControl
 
 	public function onPreRender($param) {
 		parent::onPreRender($param);
-		$cmd = $this->getCmdParam();
-		if ($this->getPage()->IsCallBack && (!$cmd || $cmd === 'show_all_directives') && method_exists($this, 'loadConfig')) {
-			$this->loadConfig();
-		} elseif (!$this->getPage()->IsCallBack && !$this->getPage()->IsPostBack) {
+		if (!$this->getPage()->IsCallBack && !$this->getPage()->IsPostBack) {
 			$this->display_directive = $this->getShow();
 		}
 	}
@@ -188,5 +186,14 @@ class DirectiveListTemplate extends ConfigListTemplate implements IActiveControl
 	public function setGroupName($group_name) {
 		$this->setViewState(self::GROUP_NAME, $group_name);
 	}
+
+	public function getIsDirectiveCreated() {
+		return $this->getViewState(self::IS_DIRECTIVE_CREATED);
+	}
+
+	public function setIsDirectiveCreated($is_created) {
+		$this->setViewState(self::IS_DIRECTIVE_CREATED, $is_created);
+	}
+
 }
 ?>

@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -306,34 +306,21 @@ class BaculaSetting extends APIModule {
 									$values
 								);
 								$overwrite_directive = implode(' ', array_filter($overwrite_directive));
-								$hour = $directive_value[$i]['Hour'][0];
-								$hourly = '';
 								$min = 0;
-								$minute = '00';
 								/**
 								 * Check if Minute key exists because of bug about missing Minute
 								 * @see http://bugs.bacula.org/view.php?id=2318
 								 */
 								if (array_key_exists('Minute', $directive_value[$i])) {
 									$min = $directive_value[$i]['Minute'];
-									$minute = sprintf('%02d', $min);
 								}
-								$day = Params::getDaysConfig($directive_value[$i]['Day']);
-								$month = Params::getMonthsConfig($directive_value[$i]['Month']);
-								$week = Params::getWeeksConfig($directive_value[$i]['WeekOfMonth']);
-								$wday = Params::getWdaysConfig($directive_value[$i]['DayOfWeek']);
-								if (!empty($day)) {
-									$day = 'on ' . $day;
-								}
-								$value = array($overwrite_directive, $month, $week, $day, $wday);
-								$hour_len = count($directive_value[$i]['Hour']);
-								if ($hour_len == 24) {
-									$value[] = 'hourly';
-								}
-								if ($hour_len == 1 || ($hour_len == 24 && $min != 0)) {
-									$value[] = 'at';
-									$value[] = "$hour:$minute";
-								}
+								$moys = Params::getMonthsOfYearConfig($directive_value[$i]['Month']);
+								$woys = Params::getWeeksOfYearConfig($directive_value[$i]['WeekOfYear']);
+								$doms = Params::getDaysOfMonthConfig($directive_value[$i]['Day']);
+								$woms = Params::getWeeksOfMonthConfig($directive_value[$i]['WeekOfMonth']);
+								$dows = Params::getDaysOfWeekConfig($directive_value[$i]['DayOfWeek']);
+								$t = Params::getTimeConfig($directive_value[$i]['Hour'], $min);
+								$value = array($overwrite_directive, $moys, $woys, $doms, $woms, $dows, $t);
 								$value = array_filter($value);
 								if (!array_key_exists($directive_name, $resource[$resource_type])) {
 									$resource[$resource_type][$directive_name] = array();

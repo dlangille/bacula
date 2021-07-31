@@ -3599,3 +3599,144 @@ msgstr "Kreator nowego zadania backupu"
 
 msgid "This wizard enables you to create in easy way a new backup job."
 msgstr "Ten kreator umożliwia tworzenie w łatwy sposób nowego zadania backupu."
+
+msgid "Monday"
+msgstr "Monday"
+
+msgid "Tuesday"
+msgstr "Tuesday"
+
+msgid "Wednesday"
+msgstr "Wednesday"
+
+msgid "Thursday"
+msgstr "Thursday"
+
+msgid "Friday"
+msgstr "Friday"
+
+msgid "Saturday"
+msgstr "Saturday"
+
+msgid "Sunday"
+msgstr "Sunday"
+
+msgid "Days of the week"
+msgstr "Days of the week"
+
+msgid "Weeks of the month"
+msgstr "Weeks of the month"
+
+msgid "first"
+msgstr "first"
+
+msgid "second"
+msgstr "second"
+
+msgid "third"
+msgstr "third"
+
+msgid "fourth"
+msgstr "fourth"
+
+msgid "fifth"
+msgstr "fifth"
+
+msgid "sixth"
+msgstr "sixth"
+
+msgid "Days of the month"
+msgstr "Days of the month"
+
+msgid "Weeks of the year"
+msgstr "Weeks of the year"
+
+msgid "All weeks"
+msgstr "All weeks"
+
+msgid "All days"
+msgstr "All days"
+
+msgid "Run at specified HH:MM"
+msgstr "Run at specified HH:MM"
+
+msgid "Run at"
+msgstr "Run at"
+
+msgid "All months"
+msgstr "All months"
+
+msgid "January"
+msgstr "January"
+
+msgid "February"
+msgstr "February"
+
+msgid "March"
+msgstr "March"
+
+msgid "April"
+msgstr "April"
+
+msgid "May"
+msgstr "May"
+
+msgid "June"
+msgstr "June"
+
+msgid "July"
+msgstr "July"
+
+msgid "August"
+msgstr "August"
+
+msgid "September"
+msgstr "September"
+
+msgid "October"
+msgstr "October"
+
+msgid "November"
+msgstr "November"
+
+msgid "December"
+msgstr "December"
+
+msgid "Last day of the month"
+msgstr "Last day of the month"
+
+msgid "Months of the year"
+msgstr "Months of the year"
+
+msgid "Hourly"
+msgstr "Hourly"
+
+msgid "Daily"
+msgstr "Daily"
+
+msgid "Weekly"
+msgstr "Weekly"
+
+msgid "Monthly"
+msgstr "Monthly"
+
+msgid "Custom"
+msgstr "Custom"
+
+msgid "Run job every hour at the specified minute"
+msgstr "Run job every hour at the specified minute"
+
+msgid "Run job every day at the specified time"
+msgstr "Run job every day at the specified time"
+
+msgid "Run job every week at the specified time on selected days of the week"
+msgstr "Run job every week at the specified time on selected days of the week"
+
+msgid "Run job every month at the specified time in selected weeks of the month"
+msgstr "Run job every month at the specified time in selected weeks of the month"
+
+msgid "Setup your custom schedule"
+msgstr "Setup your custom schedule"
+
+msgid "Override directives"
+msgstr "Override directives"

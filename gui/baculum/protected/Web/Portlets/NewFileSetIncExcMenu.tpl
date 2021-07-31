@@ -4,7 +4,6 @@
 		<li><com:TActiveLinkButton
 			ID="NewIncludeBlock"
 			OnCommand="Parent.SourceTemplateControl.newIncludeBlock"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->NewIncludeBlock->ClientID%>').parents('div').find('div.incexc'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Text=""
 			Attributes.onclick="$(this).closest('div.config_new_fileset').hide();"
@@ -15,7 +14,6 @@
 		<li><com:TActiveLinkButton
 			ID="NewExcludeBlock"
 			OnCommand="Parent.SourceTemplateControl.newExcludeFile"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->NewExcludeBlock->ClientID%>').parents('div').find('div.exclude_file'); BaculaConfig.scroll_to_element(el[el.length-1]); $(el[el.length-1]).find('input')[0].focus();"
 			Text=""
 			Attributes.onclick="$(this).closest('div.config_new_fileset').hide();"

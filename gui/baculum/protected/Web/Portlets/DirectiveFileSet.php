@@ -3,7 +3,7 @@
  * Bacula(R) - The Network Backup Solution
  * Baculum   - Bacula web interface
  *
- * Copyright (C) 2013-2019 Kern Sibbald
+ * Copyright (C) 2013-2021 Kern Sibbald
  *
  * The main author of Baculum is Marcin Haba.
  * The original author of Bacula is Kern Sibbald, with contributions
@@ -286,6 +286,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 			for ($i = 0; $i < count($this->directive_types); $i++) {
 				$controls = $value->RepeaterFileSetOptions->findControlsByType($this->directive_types[$i]);
 				for ($j = 0; $j < count($controls); $j++) {
+					$controls[$j]->setValue();
 					$directive_name = $controls[$j]->getDirectiveName();
 					$directive_value = $controls[$j]->getDirectiveValue();
 					$index = $controls[$j]->getGroupName();
@@ -316,6 +317,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 
 				$controls = $value->RepeaterFileSetInclude->findControlsByType($this->directive_types[$i]);
 				for ($j = 0; $j < count($controls); $j++) {
+					$controls[$j]->setValue();
 					$directive_name = $controls[$j]->getDirectiveName();
 					$directive_value = $controls[$j]->getDirectiveValue();
 					if (empty($directive_value)) {
@@ -332,6 +334,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 				}
 				$controls = $value->RepeaterFileSetPlugin->findControlsByType($this->directive_types[$i]);
 				for ($j = 0; $j < count($controls); $j++) {
+					$controls[$j]->setValue();
 					$directive_name = $controls[$j]->getDirectiveName();
 					$directive_value = $controls[$j]->getDirectiveValue();
 					if (empty($directive_value)) {
@@ -375,6 +378,7 @@ class DirectiveFileSet extends DirectiveListTemplate {
 		for ($i = 0; $i < count($this->directive_types); $i++) {
 			$controls = $this->RepeaterFileSetExclude->findControlsByType($this->directive_types[$i]);
 			for ($j = 0; $j < count($controls); $j++) {
+				$controls[$j]->setValue();
 				$directive_name = $controls[$j]->getDirectiveName();
 				$directive_value = $controls[$j]->getDirectiveValue();
 				if (is_null($directive_value)) {

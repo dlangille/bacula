@@ -49,6 +49,7 @@ class DirectorView extends BaculumWebPage {
 			$this->DirDirectorConfig->setComponentName($component_name);
 			$this->DirDirectorConfig->setResourceName($component_name);
 			$this->DirDirectorConfig->setLoadValues(true);
+			$this->DirDirectorConfig->IsDirectiveCreated = false;
 			$this->DirDirectorConfig->raiseEvent('OnDirectiveListLoad', $this, null);
 		}
 	}

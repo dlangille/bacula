@@ -36,23 +36,11 @@ class NewBackupJobWizard extends BaculumWebPage {
 	const PREV_STEP = 'PrevStep';
 	const JOBDEFS = 'JobDefs';
 
-	public function onLoad($param) {
-		parent::onLoad($param);
-		$this->JobDefs->saveDirective();
-		$this->Client->saveDirective();
-		$this->Fileset->saveDirective();
-		$this->Storage->saveDirective();
-		$this->Pool->saveDirective();
-		$this->FullBackupPool->saveDirective();
-		$this->IncrementalBackupPool->saveDirective();
-		$this->DifferentialBackupPool->saveDirective();
-		$this->Level->saveDirective();
-		$this->Messages->saveDirective();
-		$this->Schedule->saveDirective();
-	}
-
-	public function onLoadComplete($param) {
-		parent::onLoadComplete($param);
+	public function onPreRender($param) {
+		parent::onPreRender($param);
+		if ($this->IsCallBack) {
+			return;
+		}
 		$step_index = $this->NewJobWizard->getActiveStepIndex();
 		$prev_step = $this->getPrevStep();
 		$this->setPrevStep($step_index);
@@ -120,13 +108,15 @@ class NewBackupJobWizard extends BaculumWebPage {
 	 */
 	public function loadJobDefs() {
 		$jobdefs_list = array();
-		$jobdefs = $this->getModule('api')->get(array('config', 'dir', 'jobdefs'))->output;
+		$jobdefs = $this->getModule('api')->get([
+			'config', 'dir', 'jobdefs'
+		])->output;
 		for ($i = 0; $i < count($jobdefs); $i++) {
 			$jobdefs_list[] = $jobdefs[$i]->JobDefs->Name;
 		}
 		asort($jobdefs_list);
 		$this->JobDefs->setData($jobdefs_list);
-		$this->JobDefs->onLoad(null);
+		$this->JobDefs->createDirective();
 	}
 
 	/**
@@ -140,9 +130,9 @@ class NewBackupJobWizard extends BaculumWebPage {
 			return;
 		}
 		$jobdefs = rawurlencode($directive_value);
-		$result = $this->getModule('api')->get(array(
+		$result = $this->getModule('api')->get([
 			'config', 'dir', 'jobdefs', $jobdefs
-		));
+		]);
 		if ($result->error === 0) {
 			$value = (array)$result->output;
 			$this->setJobDefs($value);
@@ -177,7 +167,7 @@ class NewBackupJobWizard extends BaculumWebPage {
 		if (key_exists('Client', $jobdefs) && is_null($this->Client->getDirectiveValue())) {
 			$this->Client->setDirectiveValue($jobdefs['Client']);
 		}
-		$this->Client->onLoad(null);
+		$this->Client->createDirective();
 	}
 
 	/**
@@ -186,6 +176,14 @@ class NewBackupJobWizard extends BaculumWebPage {
 	 * @return none
 	 */
 	public function loadFilesets() {
+		$this->loadFilesetList(null, null);
+		$jobdefs = $this->getJobDefs();
+		if (key_exists('Fileset', $jobdefs) && is_null($this->Fileset->getDirectiveValue())) {
+			$this->Fileset->setDirectiveValue($jobdefs['Fileset']);
+		}
+	}
+
+	public function loadFilesetList($sender, $param) {
 		$fileset_list = array();
 		$filesets = $this->getModule('api')->get(array('config', 'dir', 'fileset'))->output;
 		for ($i = 0; $i < count($filesets); $i++) {
@@ -193,11 +191,7 @@ class NewBackupJobWizard extends BaculumWebPage {
 		}
 		asort($fileset_list);
 		$this->Fileset->setData($fileset_list);
-		$jobdefs = $this->getJobDefs();
-		if (key_exists('Fileset', $jobdefs) && is_null($this->Fileset->getDirectiveValue())) {
-			$this->Fileset->setDirectiveValue($jobdefs['Fileset']);
-		}
-		$this->Fileset->onLoad(null);
+		$this->Fileset->createDirective();
 	}
 
 	/**
@@ -264,8 +258,8 @@ class NewBackupJobWizard extends BaculumWebPage {
 		$jobdefs = $this->getJobDefs();
 		if (key_exists('Storage', $jobdefs) && is_array($jobdefs['Storage']) && count($jobdefs['Storage']) == 1 && is_null($this->Storage->getDirectiveValue())) {
 			$this->Storage->setDirectiveValue($jobdefs['Storage'][0]);
+			$this->Storage->createDirective();
 		}
-		$this->Storage->onLoad(null);
 		if (key_exists('SpoolData', $jobdefs) && is_null($this->SpoolData->getDirectiveValue())) {
 			$this->SpoolData->setDirectiveValue($jobdefs['SpoolData']);
 			$this->SpoolData->createDirective();
@@ -286,6 +280,30 @@ class NewBackupJobWizard extends BaculumWebPage {
 	 * @return none
 	 */
 	public function loadPools() {
+		$pool_list = $this->loadPoolList(null, null);
+		$jobdefs = $this->getJobDefs();
+		$this->FullBackupPool->setData($pool_list);
+		if (key_exists('FullBackupPool', $jobdefs) && is_null($this->FullBackupPool->getDirectiveValue())) {
+			$this->FullBackupPool->setDirectiveValue($jobdefs['FullBackupPool']);
+		}
+		$this->FullBackupPool->createDirective();
+		$this->IncrementalBackupPool->setData($pool_list);
+		if (key_exists('IncrementalBackupPool', $jobdefs) && is_null($this->IncrementalBackupPool->getDirectiveValue())) {
+			$this->IncrementalBackupPool->setDirectiveValue($jobdefs['IncrementalBackupPool']);
+		}
+		$this->IncrementalBackupPool->createDirective();
+		$this->DifferentialBackupPool->setData($pool_list);
+		if (key_exists('DifferentialBackupPool', $jobdefs) && is_null($this->DifferentialBackupPool->getDirectiveValue())) {
+			$this->DifferentialBackupPool->setDirectiveValue($jobdefs['DifferentialBackupPool']);
+		}
+		$this->DifferentialBackupPool->createDirective();
+		if (key_exists('Pool', $jobdefs) && is_null($this->Pool->getDirectiveValue())) {
+			$this->Pool->setDirectiveValue($jobdefs['Pool']);
+		}
+		$this->Pool->createDirective();
+	}
+
+	public function loadPoolList($sender, $param) {
 		$pool_list = array();
 		$pools = $this->getModule('api')->get(array('config', 'dir', 'pool'))->output;
 		for ($i = 0; $i < count($pools); $i++) {
@@ -293,26 +311,8 @@ class NewBackupJobWizard extends BaculumWebPage {
 		}
 		asort($pool_list);
 		$this->Pool->setData($pool_list);
-		$jobdefs = $this->getJobDefs();
-		$this->FullBackupPool->setData($pool_list);
-		if (key_exists('FullBackupPool', $jobdefs) && is_null($this->FullBackupPool->getDirectiveValue())) {
-			$this->FullBackupPool->setDirectiveValue($jobdefs['FullBackupPool']);
-		}
-		$this->FullBackupPool->onLoad(null);
-		$this->IncrementalBackupPool->setData($pool_list);
-		if (key_exists('IncrementalBackupPool', $jobdefs) && is_null($this->IncrementalBackupPool->getDirectiveValue())) {
-			$this->IncrementalBackupPool->setDirectiveValue($jobdefs['IncrementalBackupPool']);
-		}
-		$this->IncrementalBackupPool->onLoad(null);
-		$this->DifferentialBackupPool->setData($pool_list);
-		if (key_exists('DifferentialBackupPool', $jobdefs) && is_null($this->DifferentialBackupPool->getDirectiveValue())) {
-			$this->DifferentialBackupPool->setDirectiveValue($jobdefs['DifferentialBackupPool']);
-		}
-		$this->DifferentialBackupPool->onLoad(null);
-		if (key_exists('Pool', $jobdefs) && is_null($this->Pool->getDirectiveValue())) {
-			$this->Pool->setDirectiveValue($jobdefs['Pool']);
-		}
-		$this->Pool->onLoad(null);
+		$this->Pool->createDirective();
+		return $pool_list;
 	}
 
 	public function loadBackupJobDirectives() {
@@ -371,7 +371,7 @@ class NewBackupJobWizard extends BaculumWebPage {
 		if (key_exists('Level', $jobdefs)) {
 			$this->Level->setDirectiveValue($jobdefs['Level']);
 		}
-		$this->Level->onLoad(null);
+		$this->Level->createDirective();
 	}
 	/**
 	 * Load messages.
@@ -390,7 +390,7 @@ class NewBackupJobWizard extends BaculumWebPage {
 		if (key_exists('Messages', $jobdefs)) {
 			$this->Messages->setDirectiveValue($jobdefs['Messages']);
 		}
-		$this->Messages->onLoad(null);
+		$this->Messages->createDirective();
 	}
 
 	/**
@@ -399,6 +399,15 @@ class NewBackupJobWizard extends BaculumWebPage {
 	 * @return none
 	 */
 	public function loadSchedules() {
+		$this->loadScheduleList(null, null);
+		$jobdefs = $this->getJobDefs();
+		if (key_exists('Schedule', $jobdefs)) {
+			$this->Schedule->setDirectiveValue($jobdefs['Schedule']);
+		}
+		$this->Schedule->createDirective();
+	}
+
+	public function loadScheduleList($sender, $param) {
 		$schedule_list = array();
 		$schedules = $this->getModule('api')->get(array('config', 'dir', 'schedule'))->output;
 		for ($i = 0; $i < count($schedules); $i++) {
@@ -406,11 +415,7 @@ class NewBackupJobWizard extends BaculumWebPage {
 		}
 		asort($schedule_list);
 		$this->Schedule->setData($schedule_list);
-		$jobdefs = $this->getJobDefs();
-		if (key_exists('Schedule', $jobdefs)) {
-			$this->Schedule->setDirectiveValue($jobdefs['Schedule']);
-		}
-		$this->Schedule->onLoad(null);
+		$this->Schedule->createDirective();
 	}
 
 	public function wizardCompleted($sender, $param) {

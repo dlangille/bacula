@@ -4,7 +4,6 @@
 		<li><com:TActiveLinkButton
 			ID="Console"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -14,7 +13,6 @@
 		<li><com:TActiveLinkButton
 			ID="Stdout"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -24,7 +22,6 @@
 		<li><com:TActiveLinkButton
 			ID="Stderr"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -34,7 +31,6 @@
 		<li><com:TActiveLinkButton
 			ID="Syslog"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -44,7 +40,6 @@
 		<li><com:TActiveLinkButton
 			ID="Catalog"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -54,7 +49,6 @@
 		<li><com:TActiveLinkButton
 			ID="Director"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -64,7 +58,6 @@
 		<li><com:TActiveLinkButton
 			ID="File"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -74,7 +67,6 @@
 		<li><com:TActiveLinkButton
 			ID="Append"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -84,7 +76,6 @@
 		<li><com:TActiveLinkButton
 			ID="Mail"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -94,7 +85,6 @@
 		<li><com:TActiveLinkButton
 			ID="MailOnError"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -104,7 +94,6 @@
 		<li><com:TActiveLinkButton
 			ID="MailOnSuccess"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>
@@ -114,7 +103,6 @@
 		<li><com:TActiveLinkButton
 			ID="Operator"
 			OnCommand="Parent.SourceTemplateControl.newMessagesDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->ClientID%>_new_messages').next().find('div.directive'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_messages').hide();"
 			>

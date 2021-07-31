@@ -166,6 +166,7 @@ class DirectiveMessages extends DirectiveListTemplate {
 			$directive_values = array();
 			$where_control = $control->findControlsByType('DirectiveTextBox');
 			if (count($where_control) === 1 && $where_control[0]->getShow() === true) {
+				$where_control[0]->setValue();
 				$directive_values['Where'] = array($where_control[0]->getDirectiveValue());
 			}
 			$types_control = $control->Types;

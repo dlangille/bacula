@@ -4,7 +4,6 @@
 		<li><com:TActiveLinkButton
 			ID="RunscriptItem"
 			OnCommand="Parent.SourceTemplateControl.newRunscriptDirective"
-			CommandParameter="save"
 			ClientSide.OnComplete="var el = $('#<%=$this->RunscriptItem->ClientID%>').parents('div').find('h3.runscript_options'); BaculaConfig.scroll_to_element(el[el.length-1]);"
 			Attributes.onclick="$(this).closest('div.config_new_runscript').hide();"
 			>
