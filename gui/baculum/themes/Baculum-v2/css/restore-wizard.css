@@ -17,10 +17,16 @@
 	height: calc(100% - 57px) !important;
 }
 
-@media (max-width: 600px) {
+@media only screen and (max-width: 600px) {
 	#restore-browser-files {
 		/* On small devices bottom toolbar with search, offset and limit is not displayed */
 		height: 100% !important;
+	}
+}
+
+@media only screen and (max-width: 1650px) {
+	.offset_limit {
+		display: none;
 	}
 }
 
@@ -52,7 +58,7 @@ div.file-browser-element:hover {
 
 .restore-browser-element-right {
 	float: right;
-	width: 100px;
+	width: 137px;
 }
 
 .restore-browser-element-right {

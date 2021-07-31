@@ -650,22 +650,25 @@ $(function() {
 							<div id="restore-browser-files-content"></div>
 						</div>
 						<div id="restore-browser-nav" class="w3-hide-small" style="height: 57px; padding: 8px 0;">
-							<button type="button" class="w3-button w3-dark-grey w3-right" onclick="oRestoreBrowserFiles.next_page();"><%[ Next ]%> &nbsp;<i class="fa fa-arrow-right"></i></button>
-							<button type="button" class="w3-button w3-dark-grey w3-right w3-margin-right" onclick="oRestoreBrowserFiles.prev_page();"><i class="fa fa-arrow-left"></i> &nbsp;<%[ Previous ]%></button>
+							<button type="button" class="w3-button w3-dark-grey w3-right" onclick="oRestoreBrowserFiles.next_page();" title="<%[ Next ]%>"><i class="fa fa-arrow-right"></i></button>
+							<button type="button" class="w3-button w3-dark-grey w3-right w3-margin-right" onclick="oRestoreBrowserFiles.prev_page();" title="<%[ Previous ]%>"><i class="fa fa-arrow-left"></i></button>
 							<com:TActiveTextBox
 								ID="RestoreBrowserLimit"
 								CssClass="w3-input w3-border w3-right w3-show-inline-block w3-margin-right"
 								Width="70px"
 								Text="2000"
+								Attributes.title="<%[ Limit: ]%>"
 							/>
-							<span class="w3-right" style="padding: 8px 2px 8px 8px"><%[ Limit: ]%></span>
+							<span class="w3-right offset_limit" style="padding: 8px 2px 8px 8px"><%[ Limit: ]%></span>
 							<com:TActiveTextBox
 								ID="RestoreBrowserOffset"
 								CssClass="w3-input w3-border w3-right w3-show-inline-block"
 								Width="70px"
 								Text="0"
+								Style="margin-right: 2px"
+								Attributes.title="<%[ Offset: ]%>"
 							/>
-							<span class="w3-right" style="padding: 8px 2px"><%[ Offset: ]%></span>
+							<span class="w3-right offset_limit" style="padding: 8px 2px"><%[ Offset: ]%></span>
 							<input type="text" id="restore-browser-search" class="w3-input w3-border w3-show-inline-block" style="width: 170px" placeholder="&#128269; <%[ Search... ]%>" />
 							<input type="checkbox" class="w3-check w3-margin-left" id="restore-browser-search-insensitive" />
 							<label for="restore-browser-search-insensitive" style="padding: 8px 2px"><%[ case sensitive ]%></label>
