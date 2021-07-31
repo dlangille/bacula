@@ -34,7 +34,7 @@ var BaculaConfigClass = jQuery.klass({
 		if (additional_offset) {
 			offset += additional_offset;
 		}
-		$('html,body').animate({
+		$('html,body,.w3-modal').animate({
 			scrollTop: offset
 		}, 'slow');
 	},
