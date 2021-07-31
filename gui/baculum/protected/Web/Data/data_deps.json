@@ -36,8 +36,7 @@
 			"Job": ["Storage"],
 			"JobDefs": ["Storage"],
 			"Pool": ["Storage"],
-			"Schedule": ["Storage"],
-			"Storage": ["Autochanger"]
+			"Schedule": ["Storage"]
 		},
 		"Schedule": {
 			"Job": ["Schedule"],
