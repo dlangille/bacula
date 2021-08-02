@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-04-19 03:16\n"
+"PO-Revision-Date: 2021-08-02 16:54\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Marcin Haba <marcin.haba@bacula.pl>\n"
@@ -3601,142 +3601,143 @@ msgid "This wizard enables you to create in easy way a new backup job."
 msgstr "Ten kreator umożliwia tworzenie w łatwy sposób nowego zadania backupu."
 
 msgid "Monday"
-msgstr "Monday"
+msgstr "Poniedziałek"
 
 msgid "Tuesday"
-msgstr "Tuesday"
+msgstr "Wtorek"
 
 msgid "Wednesday"
-msgstr "Wednesday"
+msgstr "Środa"
 
 msgid "Thursday"
-msgstr "Thursday"
+msgstr "Czwartek"
 
 msgid "Friday"
-msgstr "Friday"
+msgstr "Piątek"
 
 msgid "Saturday"
-msgstr "Saturday"
+msgstr "Sobota"
 
 msgid "Sunday"
-msgstr "Sunday"
+msgstr "Niedziela"
 
 msgid "Days of the week"
-msgstr "Days of the week"
+msgstr "Dni tygodnia"
 
 msgid "Weeks of the month"
-msgstr "Weeks of the month"
+msgstr "Tygodnie miesiąca"
 
 msgid "first"
-msgstr "first"
+msgstr "pierwszy"
 
 msgid "second"
-msgstr "second"
+msgstr "drugi"
 
 msgid "third"
-msgstr "third"
+msgstr "trzeci"
 
 msgid "fourth"
-msgstr "fourth"
+msgstr "czwarty"
 
 msgid "fifth"
-msgstr "fifth"
+msgstr "piąty"
 
 msgid "sixth"
-msgstr "sixth"
+msgstr "szósty"
 
 msgid "Days of the month"
-msgstr "Days of the month"
+msgstr "Dni miesiąca"
 
 msgid "Weeks of the year"
-msgstr "Weeks of the year"
+msgstr "Tygodnie roku"
 
 msgid "All weeks"
-msgstr "All weeks"
+msgstr "Wszystkie tygodnie"
 
 msgid "All days"
-msgstr "All days"
+msgstr "Wszystkie dni"
 
 msgid "Run at specified HH:MM"
-msgstr "Run at specified HH:MM"
+msgstr "Uruchom o określonej GG:MM"
 
 msgid "Run at"
-msgstr "Run at"
+msgstr "Uruchom o"
 
 msgid "All months"
-msgstr "All months"
+msgstr "Wszystkie miesiące"
 
 msgid "January"
-msgstr "January"
+msgstr "Styczeń"
 
 msgid "February"
-msgstr "February"
+msgstr "Luty"
 
 msgid "March"
-msgstr "March"
+msgstr "Marzec"
 
 msgid "April"
-msgstr "April"
+msgstr "Kwiecień"
 
 msgid "May"
-msgstr "May"
+msgstr "Maj"
 
 msgid "June"
-msgstr "June"
+msgstr "Czerwiec"
 
 msgid "July"
-msgstr "July"
+msgstr "Lipiec"
 
 msgid "August"
-msgstr "August"
+msgstr "Sierpień"
 
 msgid "September"
-msgstr "September"
+msgstr "Wrzesień"
 
 msgid "October"
-msgstr "October"
+msgstr "Październik"
 
 msgid "November"
-msgstr "November"
+msgstr "Listopad"
 
 msgid "December"
-msgstr "December"
+msgstr "Grudzień"
 
 msgid "Last day of the month"
-msgstr "Last day of the month"
+msgstr "Ostatni dzień miesiąca"
 
 msgid "Months of the year"
-msgstr "Months of the year"
+msgstr "Miesiące roku"
 
 msgid "Hourly"
-msgstr "Hourly"
+msgstr "Co godzinę"
 
 msgid "Daily"
-msgstr "Daily"
+msgstr "Codziennie"
 
 msgid "Weekly"
-msgstr "Weekly"
+msgstr "Tygodniowy"
 
 msgid "Monthly"
-msgstr "Monthly"
+msgstr "Miesięczny"
 
 msgid "Custom"
-msgstr "Custom"
+msgstr "Własny"
 
 msgid "Run job every hour at the specified minute"
-msgstr "Run job every hour at the specified minute"
+msgstr "Uruchom zadanie co godzinę o określonej minucie"
 
 msgid "Run job every day at the specified time"
-msgstr "Run job every day at the specified time"
+msgstr "Uruchom zadanie codziennie o określonej godzinie"
 
 msgid "Run job every week at the specified time on selected days of the week"
-msgstr "Run job every week at the specified time on selected days of the week"
+msgstr "Uruchom zadanie co tydzień o określonej godzinie w wybranych dniach tygodnia"
 
 msgid "Run job every month at the specified time in selected weeks of the month"
-msgstr "Run job every month at the specified time in selected weeks of the month"
+msgstr "Uruchom zadanie co miesiąc o określonej godzinie w wybranych tygodniach miesiąca"
 
 msgid "Setup your custom schedule"
-msgstr "Setup your custom schedule"
+msgstr "Ustaw swój własny harmonogram"
 
 msgid "Override directives"
-msgstr "Override directives"
+msgstr "Zastąp dyrektywy"
+
