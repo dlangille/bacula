@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-07-15 18:43\n"
+"PO-Revision-Date: 2021-08-02 17:54\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Sergey Zhidkov <zhsv@bk.ru>\n"
@@ -2548,7 +2548,7 @@ msgid "Vol. abytes"
 msgstr "Том abytes"
 
 msgid "Vol. apadding"
-msgstr "Добавить том"
+msgstr "Добавить Том"
 
 msgid "Vol. hole bytes"
 msgstr "Vol. hole bytes"
@@ -3115,7 +3115,7 @@ msgid "Maximum concurrent jobs:"
 msgstr "Максимум одновременных задач:"
 
 msgid "Maximum volume size:"
-msgstr "Максимальный размер тома:"
+msgstr "Максимальный размер Тома:"
 
 msgid "Mounted:"
 msgstr "Смонтировано:"
@@ -3145,7 +3145,7 @@ msgid "Write device:"
 msgstr "Устройство записи:"
 
 msgid "Write volume:"
-msgstr "Записать том:"
+msgstr "Записать Том:"
 
 msgid "Read pool:"
 msgstr "Чтение пула:"
@@ -3154,7 +3154,7 @@ msgid "Read device:"
 msgstr "Чтение устройства:"
 
 msgid "Read volume:"
-msgstr "Чтение тома:"
+msgstr "Чтение Тома:"
 
 msgid "Used space:"
 msgstr "Использованное пространство:"
@@ -3301,13 +3301,13 @@ msgid "Release all I/E slots"
 msgstr "Освободить все I/E слоты"
 
 msgid "There are to few regular slots to transfer selected volumes from import/export slots. Full import/export slot count: %ie_slot_count, free regular slot count: %slot_count."
-msgstr "Есть несколько обычных слотов для переноса выбранных томов из слотов импорта / экспорта. Полное количество слотов импорта / экспорта: %ie_slot_count, количество свободных обычных слотов: %slot_count."
+msgstr "Есть несколько обычных слотов для переноса выбранных Томов из слотов импорта / экспорта. Полное количество слотов импорта / экспорта: %ie_slot_count, количество свободных обычных слотов: %slot_count."
 
 msgid "Tip: To use bulk autochanger actions, please select table rows."
 msgstr "Подсказка: Чтобы использовать массовые действия автосмены, выберите строку таблицы."
 
 msgid "Mount volume"
-msgstr "Монтировать том"
+msgstr "Монтировать Том"
 
 msgid "API hosts:"
 msgstr "Хосты API:"
@@ -3499,7 +3499,7 @@ msgid "The source pool will be examined for finding backup jobs to copy."
 msgstr "Исходный пул будет исследован на предмет поиска заданий резервного копирования для копирования."
 
 msgid "See volumes in selected pool"
-msgstr "Смотреть тома в выбранном пуле"
+msgstr "Смотреть Тома в выбранном пуле"
 
 msgid "Step 3 - how would you like to copy"
 msgstr "Шаг 3 - как вы хотите сделать резервную копию"
@@ -3517,13 +3517,13 @@ msgid "Copy by client"
 msgstr "Копировать по клиенту"
 
 msgid "Copy by volume"
-msgstr "Копировать по тому"
+msgstr "Копировать по Тому"
 
 msgid "Copy by smallest volume"
-msgstr "Копировать по наименьшему тому"
+msgstr "Копировать по наименьшему Тому"
 
 msgid "Copy by oldest volume"
-msgstr "Копировать по старым томам"
+msgstr "Копировать по старым Томам"
 
 msgid "Copy by SQL query"
 msgstr "Копировать по SQL-запросу"
@@ -3538,7 +3538,7 @@ msgid "See clients"
 msgstr "Смотреть клиентов"
 
 msgid "See volumes"
-msgstr "Смотреть тома"
+msgstr "Смотреть Тома"
 
 msgid "Warning"
 msgstr "Предупреждение"
@@ -3577,7 +3577,7 @@ msgid "Pick client name"
 msgstr "Выберите имя клиента"
 
 msgid "Pick volume name"
-msgstr "Выберите название тома"
+msgstr "Выберите название Тома"
 
 msgid "Level, Client and FileSet are not used during copy jobs running but they are required to define in copy job resource as the standard Job directives."
 msgstr "Уровень, Клиент и FileSet не используются во время копирования работ, но они должны определить в копировании ресурс задания в качестве стандартных директив задания."
@@ -3600,144 +3600,144 @@ msgstr "Мастер нового задания"
 msgid "This wizard enables you to create in easy way a new backup job."
 msgstr "Этот мастер позволяет вам легко создать новое задание."
 
-
 msgid "Monday"
-msgstr "Monday"
+msgstr "Понедельник"
 
 msgid "Tuesday"
-msgstr "Tuesday"
+msgstr "Вторник"
 
 msgid "Wednesday"
-msgstr "Wednesday"
+msgstr "Среда"
 
 msgid "Thursday"
-msgstr "Thursday"
+msgstr "Четверг"
 
 msgid "Friday"
-msgstr "Friday"
+msgstr "Пятница"
 
 msgid "Saturday"
-msgstr "Saturday"
+msgstr "Суббота"
 
 msgid "Sunday"
-msgstr "Sunday"
+msgstr "Воскресенье"
 
 msgid "Days of the week"
-msgstr "Days of the week"
+msgstr "Дни недели"
 
 msgid "Weeks of the month"
-msgstr "Weeks of the month"
+msgstr "Недели месяца"
 
 msgid "first"
-msgstr "first"
+msgstr "первый"
 
 msgid "second"
-msgstr "second"
+msgstr "секунд"
 
 msgid "third"
-msgstr "third"
+msgstr "третий"
 
 msgid "fourth"
-msgstr "fourth"
+msgstr "четвертая"
 
 msgid "fifth"
-msgstr "fifth"
+msgstr "пятый"
 
 msgid "sixth"
-msgstr "sixth"
+msgstr "шестой"
 
 msgid "Days of the month"
-msgstr "Days of the month"
+msgstr "Дней месяца"
 
 msgid "Weeks of the year"
-msgstr "Weeks of the year"
+msgstr "Недель года"
 
 msgid "All weeks"
-msgstr "All weeks"
+msgstr "Все недели"
 
 msgid "All days"
-msgstr "All days"
+msgstr "Все дни"
 
 msgid "Run at specified HH:MM"
-msgstr "Run at specified HH:MM"
+msgstr "Запуск в указанное HH:MM"
 
 msgid "Run at"
-msgstr "Run at"
+msgstr "Запустить в"
 
 msgid "All months"
-msgstr "All months"
+msgstr "Все месяцы"
 
 msgid "January"
-msgstr "January"
+msgstr "Январь"
 
 msgid "February"
-msgstr "February"
+msgstr "Февраль"
 
 msgid "March"
-msgstr "March"
+msgstr "Март"
 
 msgid "April"
-msgstr "April"
+msgstr "Апрель"
 
 msgid "May"
-msgstr "May"
+msgstr "Май"
 
 msgid "June"
-msgstr "June"
+msgstr "Июнь"
 
 msgid "July"
-msgstr "July"
+msgstr "Июль"
 
 msgid "August"
-msgstr "August"
+msgstr "Август"
 
 msgid "September"
-msgstr "September"
+msgstr "Сентябрь"
 
 msgid "October"
-msgstr "October"
+msgstr "Октябрь"
 
 msgid "November"
-msgstr "November"
+msgstr "Ноябрь"
 
 msgid "December"
-msgstr "December"
+msgstr "Декабрь"
 
 msgid "Last day of the month"
-msgstr "Last day of the month"
+msgstr "Последний день месяца"
 
 msgid "Months of the year"
-msgstr "Months of the year"
+msgstr "Месяцы года"
 
 msgid "Hourly"
-msgstr "Hourly"
+msgstr "Почасовой"
 
 msgid "Daily"
-msgstr "Daily"
+msgstr "Ежедневно"
 
 msgid "Weekly"
-msgstr "Weekly"
+msgstr "Еженедельно"
 
 msgid "Monthly"
-msgstr "Monthly"
+msgstr "Ежемесячно"
 
 msgid "Custom"
-msgstr "Custom"
+msgstr "Настраиваемый"
 
 msgid "Run job every hour at the specified minute"
-msgstr "Run job every hour at the specified minute"
+msgstr "Запускать задание каждый час в указанную минуту"
 
 msgid "Run job every day at the specified time"
-msgstr "Run job every day at the specified time"
+msgstr "Запускать задание каждый день в указанное время"
 
 msgid "Run job every week at the specified time on selected days of the week"
-msgstr "Run job every week at the specified time on selected days of the week"
+msgstr "Запускать задание каждую неделю в указанное время в выбранных днях недели"
 
 msgid "Run job every month at the specified time in selected weeks of the month"
-msgstr "Run job every month at the specified time in selected weeks of the month"
+msgstr "Запускать задание каждый месяц в указанное время в выбранные недели месяца"
 
 msgid "Setup your custom schedule"
-msgstr "Setup your custom schedule"
+msgstr "Настройте свой индивидуальный график"
 
 msgid "Override directives"
-msgstr "Override directives"
+msgstr "Переопределить директивы"
+
