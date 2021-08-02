@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2021-07-14 03:39\n"
+"PO-Revision-Date: 2021-08-02 19:35\n"
 "Project-Id-Version: b02f04a28aec0155df9503e3b78ae8cc\n"
 "POT-Creation-Date: \n"
 "Last-Translator: Wanderlei Hüttel <wanderlei.huttel@gmail.com>\n"
@@ -3526,217 +3526,218 @@ msgid "Copy by oldest volume"
 msgstr "Copiar pelo volume mais antigo"
 
 msgid "Copy by SQL query"
-msgstr "Copy by SQL query"
+msgstr "Copiar por consulta SQL"
 
 msgid "Copy all uncopied jobs (Pool Uncopied Jobs)"
-msgstr "Copy all uncopied jobs (Pool Uncopied Jobs)"
+msgstr "Copiar todos os jobs não copiados (Jobs não copiados da Pool)"
 
 msgid "See backup jobs"
-msgstr "See backup jobs"
+msgstr "Ver jobs de backup"
 
 msgid "See clients"
-msgstr "See clients"
+msgstr "Ver clientes"
 
 msgid "See volumes"
-msgstr "See volumes"
+msgstr "Ver volumes"
 
 msgid "Warning"
-msgstr "Warning"
+msgstr "Atenção"
 
 msgid "Note."
-msgstr "Note."
+msgstr "Nota."
 
 msgid "To chosen destination pool %pool will be assigned new Storage %storage. This action can affect all jobs (listed below) that use this pool. Are you sure you want to assign the storage %storage to pool %pool?"
-msgstr "To chosen destination pool %pool will be assigned new Storage %storage. This action can affect all jobs (listed below) that use this pool. Are you sure you want to assign the storage %storage to pool %pool?"
+msgstr "Para o pool de destino escolhido %pool será atribuído um novo armazenamento %storage. Esta ação pode afetar todos os jobs (listados abaixo) que usam esta pool. Você tem certeza de que deseja atribuir o storage %storage na pool %pool?"
 
 msgid "See all jobs that use the pool"
-msgstr "See all jobs that use the pool"
+msgstr "Ver todos os jobs que usam a pool"
 
 msgid "Step 4 - where you like to copy"
-msgstr "Step 4 - where you like to copy"
+msgstr "Etapa 4 - O que você deseja fazer backup"
 
 msgid "Destination Pool"
-msgstr "Destination Pool"
+msgstr "Pool de destino"
 
 msgid "Please select destination pool to which will be stored data."
-msgstr "Please select destination pool to which will be stored data."
+msgstr "Por favor, selecione a pool de destino que serão armazenados os dados."
 
 msgid "Destination Storage"
-msgstr "Destination Storage"
+msgstr "Armazenamento de Destino"
 
 msgid "Step 5 - copy job options"
-msgstr "Step 5 - copy job options"
+msgstr "Etapa 5 - copiar opções de jobs"
 
 msgid "Other options"
-msgstr "Other options"
+msgstr "Outras opções"
 
 msgid "Pick job name"
-msgstr "Pick job name"
+msgstr "Escolher nome do trabalho"
 
 msgid "Pick client name"
-msgstr "Pick client name"
+msgstr "Escolher nome do cliente"
 
 msgid "Pick volume name"
-msgstr "Pick volume name"
+msgstr "Escolher nome do volume"
 
 msgid "Level, Client and FileSet are not used during copy jobs running but they are required to define in copy job resource as the standard Job directives."
-msgstr "Level, Client and FileSet are not used during copy jobs running but they are required to define in copy job resource as the standard Job directives."
+msgstr "Nível, Cliente e FileSet não são usados durante a cópia de tarefas em execução, mas são necessários para definir no recurso do job de cópia como as diretivas padrão do job."
 
 msgid "Source Storage"
-msgstr "Source Storage"
+msgstr "Armazenamento de Origem"
 
 msgid "Please select a storage using which you want to read copy data."
-msgstr "Please select a storage using which you want to read copy data."
+msgstr "Selecione um armazenamento que deseja ler os dados de cópia."
 
 msgid "Please select a storage using which you want to write copied data."
-msgstr "Please select a storage using which you want to write copied data."
+msgstr "Selecione um armazenamento que deseja gravar os dados de cópia."
 
 msgid "Not used"
-msgstr "Not used"
+msgstr "Não utilizado"
 
 msgid "New backup job wizard"
-msgstr "New backup job wizard"
+msgstr "Novo job de backup"
 
 msgid "This wizard enables you to create in easy way a new backup job."
-msgstr "This wizard enables you to create in easy way a new backup job."
+msgstr "Este assistente permite que você crie um novo job de backup."
 
 msgid "Monday"
-msgstr "Monday"
+msgstr "Segunda-feira"
 
 msgid "Tuesday"
-msgstr "Tuesday"
+msgstr "Terça-feira"
 
 msgid "Wednesday"
-msgstr "Wednesday"
+msgstr "Quarta-feira"
 
 msgid "Thursday"
-msgstr "Thursday"
+msgstr "Quinta-feira"
 
 msgid "Friday"
-msgstr "Friday"
+msgstr "Sexta-feira"
 
 msgid "Saturday"
-msgstr "Saturday"
+msgstr "Sábado"
 
 msgid "Sunday"
-msgstr "Sunday"
+msgstr "Domingo"
 
 msgid "Days of the week"
-msgstr "Days of the week"
+msgstr "Dia da semana"
 
 msgid "Weeks of the month"
-msgstr "Weeks of the month"
+msgstr "Semanas do mês"
 
 msgid "first"
-msgstr "first"
+msgstr "primeira"
 
 msgid "second"
-msgstr "second"
+msgstr "segunda"
 
 msgid "third"
-msgstr "third"
+msgstr "terceira"
 
 msgid "fourth"
-msgstr "fourth"
+msgstr "quarta"
 
 msgid "fifth"
-msgstr "fifth"
+msgstr "quinta"
 
 msgid "sixth"
-msgstr "sixth"
+msgstr "sexta"
 
 msgid "Days of the month"
-msgstr "Days of the month"
+msgstr "Dias do mês"
 
 msgid "Weeks of the year"
-msgstr "Weeks of the year"
+msgstr "Semanas do ano"
 
 msgid "All weeks"
-msgstr "All weeks"
+msgstr "Todas as semanas"
 
 msgid "All days"
-msgstr "All days"
+msgstr "Todos os dias"
 
 msgid "Run at specified HH:MM"
-msgstr "Run at specified HH:MM"
+msgstr "Executar na HH:MM especificada"
 
 msgid "Run at"
-msgstr "Run at"
+msgstr "Executar em"
 
 msgid "All months"
-msgstr "All months"
+msgstr "Todos os meses"
 
 msgid "January"
-msgstr "January"
+msgstr "Janeiro"
 
 msgid "February"
-msgstr "February"
+msgstr "Fevereiro"
 
 msgid "March"
-msgstr "March"
+msgstr "Março"
 
 msgid "April"
-msgstr "April"
+msgstr "Abril"
 
 msgid "May"
-msgstr "May"
+msgstr "Maio"
 
 msgid "June"
-msgstr "June"
+msgstr "Junho"
 
 msgid "July"
-msgstr "July"
+msgstr "Julho"
 
 msgid "August"
-msgstr "August"
+msgstr "Agosto"
 
 msgid "September"
-msgstr "September"
+msgstr "Setembro"
 
 msgid "October"
-msgstr "October"
+msgstr "Outubro"
 
 msgid "November"
-msgstr "November"
+msgstr "Novembro"
 
 msgid "December"
-msgstr "December"
+msgstr "Dezembro"
 
 msgid "Last day of the month"
-msgstr "Last day of the month"
+msgstr "Último dia do mês"
 
 msgid "Months of the year"
-msgstr "Months of the year"
+msgstr "Meses do ano"
 
 msgid "Hourly"
-msgstr "Hourly"
+msgstr "Hora em hora"
 
 msgid "Daily"
-msgstr "Daily"
+msgstr "Diariamente"
 
 msgid "Weekly"
-msgstr "Weekly"
+msgstr "Semanalmente"
 
 msgid "Monthly"
-msgstr "Monthly"
+msgstr "Mensalmente"
 
 msgid "Custom"
-msgstr "Custom"
+msgstr "Personalizado"
 
 msgid "Run job every hour at the specified minute"
-msgstr "Run job every hour at the specified minute"
+msgstr "Executar o job a cada hora no minuto especificado"
 
 msgid "Run job every day at the specified time"
-msgstr "Run job every day at the specified time"
+msgstr "Executar o job todos os dias no horário especificado"
 
 msgid "Run job every week at the specified time on selected days of the week"
-msgstr "Run job every week at the specified time on selected days of the week"
+msgstr "Executar o job toda semana no horário especificado nos dias da semana selecionados"
 
 msgid "Run job every month at the specified time in selected weeks of the month"
-msgstr "Run job every month at the specified time in selected weeks of the month"
+msgstr "Executa o job todo mês no horário especificado nas semanas selecionadas do mês"
 
 msgid "Setup your custom schedule"
-msgstr "Setup your custom schedule"
+msgstr "Configurar seu agendamento personalizado"
 
 msgid "Override directives"
-msgstr "Override directives"
+msgstr "Substituir diretivas"
+
