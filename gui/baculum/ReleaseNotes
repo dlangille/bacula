@@ -1,4 +1,24 @@
 
+                Release Notes for Baculum 11.0.5.4
+
+This is a minor new feature and bug fix release. In this version a new schedule
+setting has been prepared. There have also been updated Portuguese, Russian and
+Polish translations. We removed the redundant Statistics page as all statistics
+can now be set on Director, File Daemon and Storage Daemon configuration pages.
+
+New changes and fixes:
+
+Baculum Web:
+ - New advanced schedule settings
+ - Update Portuguese translations
+ - Update Russian translations
+ - Update Polish translations
+ - Fix displaying issue in restore browser - reported by Sergey Zhidkov
+ - Fix error about expected port number when writing component main resource
+ - Fix auto-scrolling in windows with configuration
+ - Fix remove storage resource if autochanger directive is set
+ - Remove redundant statistics pages
+
                 Release Notes for Baculum 11.0.5.3
 
 This is a minor new feature and bug fix release. The main new features for this
