@@ -303,18 +303,26 @@ static JobId_t start_job(UAContext *ua, JCR *jcr, run_ctx &rc)
    }
    Dmsg4(100, "JobId=%u NewJobId=%d pool=%s priority=%d\n", (int)jcr->JobId,
          JobId, jcr->pool->name(), jcr->JobPriority);
-   free_jcr(jcr);                  /* release jcr */
    if (JobId == 0) {
       ua->error_msg(_("Job %s failed.\n"), edit_int64(rc.jr.JobId, ed1));
 
    } else {
       ua->send_msg(_("Job queued. JobId=%s\n"), edit_int64(JobId, ed1));
    }
+
    if (rc.fdcalled) {
-      ua->signal(BNET_FDCALLED); /* After this point, this is a new connection */
-      ua->UA_sock = new_bsock();
+      if (JobId != 0) {
+         ua->signal(BNET_FDCALLED); /* After this point, this is a new connection */
+         ua->UA_sock = new_bsock();
+      } else {
+         /* Job failed to start, socket can be reset here so that we won't free ua->UA_socket*/
+         jcr->file_bsock = NULL;
+      }
       ua->quit = true;
    }
+
+   free_jcr(jcr);                  /* release jcr */
+
    return JobId;
 }
 
