@@ -1,0 +1,70 @@
+#!/bin/sh
+#
+# Copyright (C) 2000-2021 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Run a simple backup of the Bacula build directory then rename fileset used and reload
+# config. Next try to copy such job, director should not crash and copying error should be
+# observed.
+# Tests community bug #2627
+TestName="copy-job-res-rename-test"
+JobName=CopyJobSave
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-migration-confs
+echo "${cwd}/build" >${cwd}/tmp/file-list
+sed 's/migrate/copy/g' ${cwd}/bin/bacula-dir.conf > ${cwd}/tmp/1
+sed 's/Migrate/Copy/g' ${cwd}/tmp/1 > ${cwd}/bin/bacula-dir.conf
+change_jobname NightlySave $JobName
+
+start_test
+
+# Write out bconsole commands
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@output /dev/null
+messages
+@$out ${cwd}/tmp/log1.out
+@# setdebug level=100 storage=File
+label storage=File volume=FileVolume001 Pool=Default
+label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
+label storage=DiskChanger volume=ChangerVolume002 slot=2 Pool=Full drive=0
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+run_bacula
+
+
+change_jobname NightlySave $JobName
+# Rename some resource (e.g. FileSet)
+sed 's/Full Set/New Full Set/g' ${cwd}/tmp/1 > ${cwd}/bin/bacula-dir.conf
+
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out ${cwd}/tmp/log2.out
+reload
+@$out ${cwd}/tmp/log3.out
+run job=copy-uncopied yes
+wait
+messages
+quit
+END_OF_DATA
+run_bconsole
+
+n_lines=`cat $tmp/log3.out | grep 'Termination' | grep 'Copying Error' | wc -l`
+if [ $n_lines -ne 1 ]; then
+   estat=1
+   print_debug "ERROR: Job did not fail as expected. See ${tmp}/log3.out"
+fi
+
+n_lines=`cat $tmp/log3.out | grep 'Fatal error: FileSet resource not found for "Full Set"' | wc -l`
+if [ $n_lines -ne 1 ]; then
+   estat=1
+   print_debug "ERROR: Did not find message related to the invalid FileSet. See ${tmp}/log3.out"
+fi
+
+check_for_zombie_jobs storage=File
+stop_bacula
+
+end_test
