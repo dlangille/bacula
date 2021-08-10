@@ -1,0 +1,121 @@
+#!/bin/bash
+#
+# Copyright (C) 2000-2021 Kern Sibbald
+# License: BSD 2-Clause; see file LICENSE-FOSS
+#
+# Test and setup the Client Initiated Backup from Job Duplicates
+# Tests for bug #7998
+#
+TestName="remote-console-duplicate-test"
+JobName=backup
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+if [ x$FORCE_TLS != xyes ]; then
+    # The certificate must match the address
+    $bperl -e 'add_attribute("$conf/bacula-dir.conf", "Address", "0.0.0.0", "Client")'
+fi
+$bperl -e 'add_attribute("$conf/bacula-dir.conf", "MaximumBandwidthPerJob", "1mb/s", "Client")'
+$bperl -e 'extract_resource("$conf/bconsole.conf", "Director")' | sed 's/Director/Console/' > $tmp/1
+cat $tmp/1 >> $conf/bacula-fd.conf
+pass=`grep -i password $tmp/1`
+name=`grep -i name $tmp/1`
+
+#run_bacula
+
+cat <<EOF >> $conf/bacula-dir.conf
+Console {
+ $name
+ $pass
+ CommandAcl = run, .api, restore, wait, status, .status, .jobs, .clients, .storages, .pools, .filesets, .defaults
+ jobacl = *all*
+ poolacl = *all*
+ clientacl = *all*
+ storageacl = *all*
+ catalogacl = *all*
+ filesetacl = *all*
+ directoryacl = *all*
+ useridacl = *all*
+ whereacl = *all*
+}
+EOF
+
+cat <<EOF >> $conf/bacula-fd.conf
+Director {
+  Name = remote-cons
+  Password = "oi3deith3peeGho4"
+  Remote = yes
+}
+EOF
+
+FDPORT=`expr $BASEPORT + 1`
+
+cat <<EOF > $tmp/bconsole-remote.conf
+Director {
+  Name = remote-cons
+  DIRport = $FDPORT
+  address = localhost
+  Password = "noused"
+}
+
+Console {
+  Name = remote-cons
+  Director = remote-cons
+  Password = "oi3deith3peeGho4"
+}
+EOF
+
+change_jobname BackupClient1 $JobName
+$bperl -e "add_attribute('$conf/bacula-dir.conf', 'AllowDuplicateJobs', 'no', 'Job', '$JobName')"
+start_test
+
+if [ x$FORCE_TLS = xyes ]; then
+    $bperl -e "setup_cons_tls('$tmp/bconsole-remote.conf')"
+fi
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File1 pool=File slot=1 drive=0
+quit
+END_OF_DATA
+
+run_bacula
+
+echo -e "proxy\nrun job=backup fdcalled=1 level=full yes" | $bin/bconsole -c $tmp/bconsole-remote.conf
+echo -e "proxy\nrun job=backup fdcalled=1 level=full yes" | $bin/bconsole -c $tmp/bconsole-remote.conf
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log1.out
+list jobs
+wait
+messages
+@$out $tmp/log2.out
+list joblog jobid=1
+@$out $tmp/log3.out
+list joblog jobid=2
+END_OF_DATA
+
+run_bconsole
+
+n_ok=`cat $tmp/log2.out| grep 'Termination:' | grep 'Backup OK' | wc -l`
+n_canceled=`cat $tmp/log3.out| grep 'Termination:' | grep 'Backup Canceled' | wc -l`
+
+if [ ${n_ok} -ne 1 ]; then
+   estat=1
+   print_debug "ERROR: JobId 1 did not succeded, see ${tmp}/log2.out!"
+fi
+
+if [ ${n_canceled} -ne 1 ]; then
+   estat=1
+   print_debug "ERROR: JobId 2 was not canceled, see ${tmp}/log3.out!"
+fi
+
+check_for_zombie_jobs storage=File1
+
+stop_bacula
+
+end_test
