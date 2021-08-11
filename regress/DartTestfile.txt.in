@@ -50,6 +50,7 @@ ADD_TEST(misc:events-filter-test "@regressdir@/tests/events-filter-test")
 ADD_TEST(misc:events-pruning-test "@regressdir@/tests/events-pruning-test")
 
 SET_TESTS_PROPERTIES(misc:hangup-blowup-test PROPERTIES TIMEOUT "60")
+ADD_TEST(misc:copy-job-res-rename-test "@regressdir@/tests/copy-job-res-rename-test")
 ADD_TEST(misc:json-test "@regressdir@/tests/json-test")
 ADD_TEST(misc:reload-client-address-test "@regressdir@/tests/reload-client-address-test")
 ADD_TEST(misc:reload-many-test "@regressdir@/tests/reload-many-test")
