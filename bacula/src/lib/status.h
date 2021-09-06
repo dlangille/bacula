@@ -176,8 +176,6 @@ static void list_terminated_jobs(STATUS_PKT *sp)
                            OT_END_OBJ,
                            OT_END);
          sendit(p, strlen(p), sp);
-
-
       } else {
          bsnprintf(buf, sizeof(buf), _("%6d  %-6s %8s %10s  %-7s  %-8s %s\n"),
             je->JobId,
@@ -186,8 +184,8 @@ static void list_terminated_jobs(STATUS_PKT *sp)
             edit_uint64_with_suffix(je->JobBytes, b2),
             termstat,
             dt, JobName);
+         sendit(buf, strlen(buf), sp);
       }
-      sendit(buf, strlen(buf), sp);
    }
    unlock_last_jobs_list();
    if (!sp->api) {
