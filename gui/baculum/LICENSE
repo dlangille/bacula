@@ -925,6 +925,14 @@ Files:
   themes/Baculum-v2/weather_sun_behind_small_cloud.png
   themes/Baculum-v2/weather_sunny.png
 
+The following icon file has been modified:
+
+File:
+  themes/Baculum-v2/weather_sunny.png
+Source:
+  themes/Baculum-v2/svg/emoji_u1f31e_mod.svg
+
+
 Copyright 2013 Google, Inc. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -939,3 +947,4 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
+#####################################################################
