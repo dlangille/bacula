@@ -679,3 +679,15 @@ msgstr "Brak dostępnych danych w tabeli"
 
 msgid "Search:"
 msgstr "Szukaj:"
+
+msgid "Get pre-defined paths:"
+msgstr "Użyj pre-definiowanych lokalizacji:"
+
+msgid "Select paths"
+msgstr "Wybierz lokalizacje"
+
+msgid "Binaries:"
+msgstr "Pliki bin.:"
+
+msgid "Configs:"
+msgstr "Pliki konfig.:"

@@ -473,6 +473,14 @@
 				/> <com:TLabel ForControl="ConfigYes" Text="<%[ Yes ]%>" />
 			</div>
 			<div id="configure_config" style="display: <%=($this->ConfigYes->Checked === true) ? 'block' : 'none';%>">
+				<div class="w3-right-align">
+					<span><%[ Get pre-defined paths: ]%></span>
+					<select id="pre_defined_paths" onchange="oConfigWizardStep4.set_paths();" class="w3-input w3-border" style="width: 400px; display: inline;">
+						<option value=""><%[ Select paths ]%></option>
+						<option value="system"><%[ Binaries: ]%> /usr/sbin, <%[ Configs: ]%> /etc/bacula</option>
+						<option value="bacula.org"><%[ Binaries: ]%> /opt/bacula/bin, <%[ Configs: ]%> /opt/bacula/etc</option>
+					</select>
+				</div>
 				<fieldset>
 					<legend><%[ General configuration ]%></legend>
 					<div class="w3-row w3-section" title="<%[ In this directory Baculum API saves temporarily Bacula configuration files (mainly for validation purposes) just before they are written as real Bacula configuration files. ]%>">
@@ -821,6 +829,67 @@
 					</com:TActiveLinkButton>
 				</div>
 			</div>
+<script>
+var oConfigWizardStep4 = {
+	paths: {
+		'system': {
+			configs: '/etc/bacula/',
+			binaries: '/usr/sbin/'
+		},
+		'bacula.org': {
+			configs: '/opt/bacula/etc/',
+			binaries: '/opt/bacula/bin/'
+		}
+	},
+	ids: {
+		pre_defined_paths: 'pre_defined_paths',
+		jsontools: {
+			bdirjson: {
+				binary: '<%=$this->BDirJSONPath->ClientID%>',
+				config: '<%=$this->DirCfgPath->ClientID%>'
+			},
+			bsdjson: {
+				binary: '<%=$this->BSdJSONPath->ClientID%>',
+				config: '<%=$this->SdCfgPath->ClientID%>'
+			},
+			bfdjson: {
+				binary: '<%=$this->BFdJSONPath->ClientID%>',
+				config: '<%=$this->FdCfgPath->ClientID%>'
+			},
+			bbconsjson: {
+				binary: '<%=$this->BBconsJSONPath->ClientID%>',
+				config: '<%=$this->BconsCfgPath->ClientID%>'
+			}
+		}
+	},
+	configs: {
+		bdirjson: {
+			config: 'bacula-dir.conf'
+		},
+		bsdjson: {
+			config: 'bacula-sd.conf'
+		},
+		bfdjson: {
+			config: 'bacula-fd.conf'
+		},
+		bbconsjson: {
+			config: 'bconsole.conf'
+		}
+	},
+	set_paths: function() {
+		var paths = document.getElementById(this.ids.pre_defined_paths);
+		if (paths.value) {
+			var bin, conf;
+			for (var binary in this.ids.jsontools) {
+				bin = document.getElementById(this.ids.jsontools[binary].binary);
+				conf = document.getElementById(this.ids.jsontools[binary].config);
+				bin.value = this.paths[paths.value].binaries + binary;
+				conf.value = this.paths[paths.value].configs + this.configs[binary].config;
+			}
+		}
+	}
+};
+</script>
 		</com:TWizardStep>
 		<com:TWizardStep ID="Step5" Title="<%[ Step 5 - authentication to API ]%>" StepType="Auto">
 			<div class="w3-container w3-section">

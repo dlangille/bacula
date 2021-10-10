@@ -674,3 +674,14 @@ msgstr "No data available in table"
 msgid "Search:"
 msgstr "Search:"
 
+msgid "Get pre-defined paths:"
+msgstr "Get pre-defined paths:"
+
+msgid "Select paths"
+msgstr "Select paths"
+
+msgid "Binaries:"
+msgstr "Binaries:"
+
+msgid "Configs:"
+msgstr "Configs:"
