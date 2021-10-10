@@ -110,22 +110,16 @@ else
    bstat=1
 fi
 
-echo ' testing a'
 grep 'shell command: run ClientBeforeJob "/bin/false RUN_FD_FAILED1"' ${cwd}/tmp/RUN_FD_FAILED.log >/dev/null
 a=$?
-echo ' testing b'
 grep 'shell command: run ClientBeforeJob "/bin/false RUN_FD_FAILED2"' ${cwd}/tmp/RUN_FD_FAILED.log >/dev/null
 b=$?
-echo ' testing c'
 grep 'shell command: run ClientBeforeJob "/bin/false RUN_FD_FAILED3"' ${cwd}/tmp/RUN_FD_FAILED.log >/dev/null
 c=$?
-echo ' testing d'
 grep 'shell command: run AfterJob "/bin/echo RunAfterFailedJob"' ${cwd}/tmp/RUN_FD_FAILED.log >/dev/null
 d=$?
-echo ' testing e'
 grep 'touching' ${cwd}/tmp/RUN_FD_FAILED.log >/dev/null
 e=$?
-echo ' testing f'
 grep '\*\*\* Backup Error \*\*\*' ${cwd}/tmp/RUN_FD_FAILED.log >/dev/null
 f=$?
 if [ $a = 0 -a $b = 0 -a $c = 0 -a $d = 0 -a $e = 0 -a $f = 0 ]
