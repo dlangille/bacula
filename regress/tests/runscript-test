@@ -120,7 +120,7 @@ grep 'shell command: run AfterJob "/bin/echo RunAfterFailedJob"' ${cwd}/tmp/RUN_
 d=$?
 grep 'touching' ${cwd}/tmp/RUN_FD_FAILED.log >/dev/null
 e=$?
-grep '*** Backup Error ***' ${cwd}/tmp/RUN_FD_FAILED.log >/dev/null
+grep '\*\*\* Backup Error \*\*\*' ${cwd}/tmp/RUN_FD_FAILED.log >/dev/null
 f=$?
 if [ $a = 0 -a $b = 0 -a $c = 0 -a $d = 0 -a $e = 0 -a $f = 0 ]
 then
@@ -138,7 +138,7 @@ grep 'shell command: run ClientBeforeJob "/bin/false RUN_FD_FAILED3"' ${cwd}/tmp
 c=$?
 grep 'shell command: run AfterJob "/bin/echo RunAfterFailedJob"' ${cwd}/tmp/RUN_FD_FAILED2.log >/dev/null
 d=$?
-grep  '*** Backup Error ***' ${cwd}/tmp/RUN_FD_FAILED2.log >/dev/null
+grep  '\*\*\* Backup Error \*\*\*' ${cwd}/tmp/RUN_FD_FAILED2.log >/dev/null
 e=$?
 grep 'RUN_FD_FAILED4' ${cwd}/tmp/RUN_FD_FAILED2.log >/dev/null
 f=$?

@@ -52,7 +52,7 @@ root_test:
 	./all-root-tests
 
 clean:
-	scripts/cleanup
+	./scripts/cleanup
 	rm -f tmp/file-list
 	rm -fr tmp/* tmp2/* working/* dumps/* Testing
 	rm -f test.out
