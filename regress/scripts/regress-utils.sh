@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Copyright (C) 2000-2020 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
@@ -16,8 +16,8 @@
 #   $FileSetName - a FileSet prefix for restore job to execute
 #
 
-# now check if we are running under a proper shell
-if test "x$SHELL" != "x/bin/bash"
+ # now check if we are running under a proper shell
+if test "x/$(basename $0)" != "x/bash"
 then
    echo "Regression script must use BASH for this utilities!"
    exit 1

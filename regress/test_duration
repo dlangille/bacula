@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 #
 # Copyright (C) 2000-2015 Kern Sibbald
 # License: BSD 2-Clause; see file LICENSE-FOSS
@@ -13,4 +13,4 @@ diff = t - float(s)
 h = int(diff / 3600)
 m = int((diff - h * 3600) / 60)
 sec = diff - h * 3600 - m * 60
-print '%02d:%02d:%02d %ds' % (h, m, sec, t-float(s))
+print('%02d:%02d:%02d %ds' % (h, m, sec, t-float(s)))
